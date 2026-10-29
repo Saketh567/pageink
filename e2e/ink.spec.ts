@@ -10,8 +10,8 @@ async function swipe(page: Page, x: number, y: number) {
 }
 
 test('sample page fits the width and is tall', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.locator('iframe.viewer-frame')).toBeVisible()
+  await page.goto('/#/p/sample')
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
   const m = await page.evaluate(() => {
     const c = document.querySelector('.viewer-scroll') as HTMLElement
     return { overflowX: c.scrollWidth - c.clientWidth, h: (document.querySelector('.viewer-ink') as SVGElement).getAttribute('height') }
@@ -21,8 +21,8 @@ test('sample page fits the width and is tall', async ({ page }) => {
 })
 
 test('draw, undo, redo, erase and persist across reload', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.locator('iframe.viewer-frame')).toBeVisible()
+  await page.goto('/#/p/sample')
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
   await swipe(page, 200, 200)
   await expect(paths(page)).toHaveCount(1)
 
@@ -44,8 +44,8 @@ test('draw, undo, redo, erase and persist across reload', async ({ page }) => {
 })
 
 test('reading mode does not draw', async ({ page }) => {
-  await page.goto('/')
-  await expect(page.locator('iframe.viewer-frame')).toBeVisible()
+  await page.goto('/#/p/sample')
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
   await page.getByRole('button', { name: /^Markup mode/ }).click()
   await swipe(page, 200, 200)
   await expect(paths(page)).toHaveCount(0)

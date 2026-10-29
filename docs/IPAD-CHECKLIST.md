@@ -19,3 +19,14 @@ Run on the Vercel preview URL (or production), in Safari first, then from the Ho
 - [ ] Draw, force-quit from the app switcher, relaunch: the strokes are back.
 - [ ] Toolbar can be dragged to the top, left, right and back; position is remembered.
 - [ ] "Draw with finger" (hand icon) lets a finger draw; Reading mode lets it scroll again.
+
+## Phase 2 (needs APP_KEY set in Vercel, and the same key entered in Settings)
+- [ ] Settings: enter the key; a wrong key shows "Key rejected" on import.
+- [ ] Import a Wikipedia article by URL: appears under en.wikipedia.org, opens, can be drawn on.
+- [ ] Import a blog post and a JavaScript app (https://react.dev): the app shows real text (watch for "Rendering JavaScript..." and note how long it took).
+- [ ] Import without typing https:// (for example "example.com").
+- [ ] Save a page as .html in Files, then Import file.
+- [ ] Reading mode: tap a link inside a page, choose "Import this page" and "Open original in Safari".
+- [ ] Reading mode: tap a #section link, it scrolls within the page.
+- [ ] Airplane Mode: previously imported pages still open and keep their ink (images may be missing until Phase 4 caching).
+- [ ] Rename and delete from the "..." menu; the layout choice (Desktop/Tablet/Phone) changes how the page is laid out.

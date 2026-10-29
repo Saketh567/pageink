@@ -9,8 +9,12 @@ export async function savePage(p: Page) {
 export async function getPage(id: ID) {
   return (await getDb()).get('pages', id)
 }
+/** Newest first. */
 export async function listPages() {
-  return (await getDb()).getAllFromIndex('pages', 'updatedAt')
+  return (await (await getDb()).getAllFromIndex('pages', 'updatedAt')).reverse()
+}
+export async function countAnnotations(pageId: ID) {
+  return (await listAnnotations(pageId)).length
 }
 export async function putSnapshot(s: Snapshot) {
   await (await getDb()).put('snapshots', s)
