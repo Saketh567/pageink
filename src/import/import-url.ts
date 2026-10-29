@@ -18,6 +18,11 @@ const MESSAGES: Record<string, string> = {
   TIMEOUT: 'The site took too long to answer.',
   RATE_LIMITED: 'Too many imports, wait a minute and try again.',
   UNAUTHORIZED: 'Key rejected. Check your key in Settings.',
+  SERVER: 'The PageInk server had a problem. Try again in a moment.',
+  UPSTREAM_401: 'The site blocked the request (it may need a login or block automated access).',
+  UPSTREAM_403: 'The site blocked the request (it may block automated access).',
+  UPSTREAM_404: 'That page was not found (404).',
+  UPSTREAM_429: 'The site is rate limiting requests. Try again later.',
 }
 
 interface ApiOk { html: string; finalUrl: string }
@@ -31,7 +36,8 @@ async function callApi(path: string, url: string, key: string): Promise<ApiOk> {
   }
   const body = await res.json().catch(() => ({}))
   if (!res.ok) {
-    const code = String(body.error ?? 'UPSTREAM_500')
+    // no JSON error body means our own function failed (crash, timeout, size), not the target site
+    const code = String(body.error ?? 'SERVER')
     throw new ImportError(code, MESSAGES[code] ?? (code.startsWith('UPSTREAM_') ? `The site answered with an error (${code.slice(9)}).` : 'Import failed.'))
   }
   return body as ApiOk
@@ -70,10 +76,20 @@ export async function importUrl(
   let url = rawUrl.trim()
   if (!/^[a-z][a-z0-9+.-]*:/i.test(url)) url = 'https://' + url
   onProgress('Fetching page…')
-  let r = await callApi('/api/fetch', url, key)
+  let r: ApiOk
   let method: Page['captureMethod'] = 'fetch'
+  try {
+    r = await callApi('/api/fetch', url, key)
+  } catch (e) {
+    // sites that refuse a plain request (403/5xx) or time out often serve a real browser, so retry rendered
+    const blocked = e instanceof ImportError && (e.code.startsWith('UPSTREAM_') && e.code !== 'UPSTREAM_404' || e.code === 'SERVER' || e.code === 'TIMEOUT')
+    if (!blocked) throw e
+    onProgress('Site blocked a plain fetch, rendering…')
+    r = await callApi('/api/render', url, key)
+    method = 'render'
+  }
   const info = inspectHtml(r.html)
-  if (info.textLength < 200 || info.emptyRoot) {
+  if (method === 'fetch' && (info.textLength < 200 || info.emptyRoot)) {
     onProgress('Rendering JavaScript…')
     try {
       r = await callApi('/api/render', r.finalUrl, key)

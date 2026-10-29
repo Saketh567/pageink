@@ -25,6 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const status = e.code === 'BAD_URL' || e.code === 'BLOCKED_HOST' ? 400 : e.code === 'TIMEOUT' ? 504 : e.code === 'TOO_LARGE' ? 413 : e.code === 'NOT_HTML' ? 415 : 502
       return fail(res, status, e.code, e.message)
     }
-    fail(res, 500, 'UPSTREAM_500', 'Unexpected error') // never log the URL
+    console.error('fetch failed:', e instanceof Error ? `${e.name}: ${e.message}` : String(e)) // never log the URL
+    fail(res, 500, 'SERVER', 'Unexpected server error')
   }
 }
