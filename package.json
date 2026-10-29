@@ -12,6 +12,10 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@preact/signals": "^2.11.4",
+    "eruda": "^3.4.3",
+    "idb": "^8.0.4",
+    "perfect-freehand": "^1.2.3",
     "preact": "^11.0.2"
   },
   "devDependencies": {

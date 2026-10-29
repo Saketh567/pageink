@@ -20,3 +20,6 @@ One line each; full reasoning is in PLAN.md section 2.
 ## Log
 
 - P0.3: `vercel.json` omits the `api/render.ts` function entry until P2.5 creates the file (Vercel rejects patterns that match nothing).
+- P1.4 input routing: chose **Option A** (touch-action `pan-x pan-y`, non-passive `touchstart`/`touchmove` cancelled for `touchType === 'stylus'`, WebKit `gesture*` events for pinch, ctrl+wheel elsewhere). Verified only with mouse events in Chromium and WebKit under Playwright; **not yet verified with a real Pencil**. If the iPad run shows the Pencil scrolling, dropped strokes or Safari page-zoom, switch to **Option B**: `touch-action: none` plus our own one-finger pan with inertia and two-finger pinch, in `src/ink/pointer.ts` and `src/viewer/zoom.ts`.
+- P1.4 draw-with-finger: while it is on in Markup mode, the container uses `touch-action: none`, so fingers draw instead of scrolling; switch to Reading mode to scroll.
+- P1.5 hover ring, P5.11, and time-stamped replay (Phase 8) are not built yet; stroke points already carry `t`.
