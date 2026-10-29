@@ -1,6 +1,25 @@
-import { actions, canRedo, canUndo, color, drawWithFinger, mode, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
+import { actions, canRedo, canUndo, color, drawWithFinger, go, mode, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
 
-const TOOLS: Array<[Tool, string, string]> = [['pen', '✎', 'Pen'], ['highlighter', '▬', 'Highlighter'], ['eraser', '⌫', 'Eraser']]
+// Line icons (Lucide, ISC licence), 24x24, stroke only.
+const ICONS = {
+  back: ['m15 18-6-6 6-6'],
+  pen: ['M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z', 'm15 5 4 4'],
+  highlighter: ['m9 11-6 6v3h9l3-3', 'm22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4'],
+  eraser: ['m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21', 'M22 21H7', 'm5 11 9 9'],
+  undo: ['M3 7v6h6', 'M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13'],
+  redo: ['M21 7v6h-6', 'M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7'],
+  finger: ['M22 14a8 8 0 0 1-8 8', 'M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2', 'M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1', 'M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10', 'M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15'],
+}
+
+function Icon({ name }: { name: keyof typeof ICONS }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {ICONS[name].map((d) => <path key={d} d={d} />)}
+    </svg>
+  )
+}
+
+const TOOLS: Array<[Tool, keyof typeof ICONS, string]> = [['pen', 'pen', 'Pen'], ['highlighter', 'highlighter', 'Highlighter'], ['eraser', 'eraser', 'Eraser']]
 
 function dragTray(e: PointerEvent) {
   const handle = e.currentTarget as HTMLElement
@@ -20,32 +39,48 @@ export function ToolTray() {
   const markup = mode.value === 'markup'
   return (
     <div class={`tray edge-${trayEdge.value}`} role="toolbar" aria-label="Markup tools">
-      <button class="grip" aria-label="Move toolbar" onPointerDown={dragTray}>⋮⋮</button>
-      <button class={markup ? 'on' : ''} aria-label={markup ? 'Markup mode, tap for reading mode' : 'Reading mode, tap for markup mode'} onClick={() => (mode.value = markup ? 'read' : 'markup')}>
-        {markup ? '✍' : '☰'}
-      </button>
+      <div class="grp">
+        <button class="grip" aria-label="Move toolbar" onPointerDown={dragTray}>⋮⋮</button>
+        <button aria-label="Back to library" onClick={() => go('')}><Icon name="back" /></button>
+        <button
+          class={markup ? 'on' : ''}
+          aria-label={markup ? 'Markup mode, tap for reading mode' : 'Reading mode, tap for markup mode'}
+          onClick={() => (mode.value = markup ? 'read' : 'markup')}
+        >
+          <span class="lbl">{markup ? 'Mark' : 'Read'}</span>
+        </button>
+      </div>
       {markup && (
         <>
-          {TOOLS.map(([t, glyph, label]) => (
-            <button key={t} class={tool.value === t ? 'on' : ''} aria-label={label} aria-pressed={tool.value === t} onClick={() => (tool.value = t)}>{glyph}</button>
-          ))}
-          <span class="sep" />
-          {PALETTE.map((c) => (
-            <button key={c} class={`swatch ${color.value === c ? 'on' : ''}`} style={{ background: c }} aria-label={`Colour ${c}`} aria-pressed={color.value === c} onClick={() => (color.value = c)} />
-          ))}
-          <label class="swatch custom" aria-label="Custom colour">
-            <input type="color" value={color.value} onInput={(e) => (color.value = (e.target as HTMLInputElement).value)} />
-          </label>
-          <span class="sep" />
-          {([2, 4, 8] as const).map((s) => (
-            <button key={s} class={size.value === s ? 'on' : ''} aria-label={`Size ${s}`} aria-pressed={size.value === s} onClick={() => (size.value = s)}>
-              <i class="dot" style={{ width: s * 2 + 4 + 'px', height: s * 2 + 4 + 'px' }} />
+          <div class="grp">
+            {TOOLS.map(([t, icon, label]) => (
+              <button key={t} class={tool.value === t ? 'on' : ''} aria-label={label} aria-pressed={tool.value === t} onClick={() => (tool.value = t)}>
+                <Icon name={icon} />
+              </button>
+            ))}
+          </div>
+          <div class="grp">
+            {PALETTE.map((c) => (
+              <button key={c} class={`swatch ${color.value === c ? 'on' : ''}`} style={{ background: c }} aria-label={`Colour ${c}`} aria-pressed={color.value === c} onClick={() => (color.value = c)} />
+            ))}
+            <label class="swatch custom" aria-label="Custom colour">
+              <input type="color" value={color.value} onInput={(e) => (color.value = (e.target as HTMLInputElement).value)} />
+            </label>
+          </div>
+          <div class="grp">
+            {([2, 4, 8] as const).map((s) => (
+              <button key={s} class={size.value === s ? 'on' : ''} aria-label={`Size ${s}`} aria-pressed={size.value === s} onClick={() => (size.value = s)}>
+                <i class="dot" style={{ width: s * 2 + 4 + 'px', height: s * 2 + 4 + 'px' }} />
+              </button>
+            ))}
+          </div>
+          <div class="grp">
+            <button disabled={!canUndo.value} aria-label="Undo" onClick={() => actions.undo()}><Icon name="undo" /></button>
+            <button disabled={!canRedo.value} aria-label="Redo" onClick={() => actions.redo()}><Icon name="redo" /></button>
+            <button class={drawWithFinger.value ? 'on' : ''} aria-label="Draw with finger" aria-pressed={drawWithFinger.value} onClick={() => (drawWithFinger.value = !drawWithFinger.value)}>
+              <Icon name="finger" />
             </button>
-          ))}
-          <span class="sep" />
-          <button disabled={!canUndo.value} aria-label="Undo" onClick={() => actions.undo()}>↶</button>
-          <button disabled={!canRedo.value} aria-label="Redo" onClick={() => actions.redo()}>↷</button>
-          <button class={drawWithFinger.value ? 'on' : ''} aria-label="Draw with finger" aria-pressed={drawWithFinger.value} onClick={() => (drawWithFinger.value = !drawWithFinger.value)}>☝</button>
+          </div>
         </>
       )}
     </div>

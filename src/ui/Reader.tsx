@@ -51,7 +51,6 @@ export function Reader({ pageId }: { pageId: string }) {
   return (
     <div class="app">
       <div ref={host} class="stage" />
-      <button class="back" onClick={() => go('')} aria-label="Back to library">‹</button>
       <ToolTray />
       {missing && <p class="toast">This page is no longer in your library.</p>}
       {busy && <p class="toast" role="status">{busy}</p>}
