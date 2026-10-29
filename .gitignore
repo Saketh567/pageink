@@ -1,0 +1,10 @@
+node_modules
+dist
+.vercel
+.env*
+!.env.example
+*.pageink.json
+test-results
+playwright-report
+*.local
+.DS_Store
