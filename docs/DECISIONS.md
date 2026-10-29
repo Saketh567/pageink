@@ -34,3 +34,5 @@ One line each; full reasoning is in PLAN.md section 2.
 - Not done: converting `position: fixed|sticky` header/nav to absolute (planned in P2.6); do it at view time using computed styles once a real page shows the problem.
 - Known risk: pages that size themselves with `100vh` are measured with a 0 px iframe, so full-height heroes may collapse. Check on the first real imports.
 - Tests: e2e runs with service workers blocked so mocked `/api` routes are not bypassed.
+- First real import (an IDFC bank page) came out unstyled. Cause: the `base-uri 'self'` CSP header is inherited by the srcdoc snapshot, so its injected `<base href>` was ignored and every relative stylesheet/image URL resolved against the Vercel origin (served index.html, rejected as "not a stylesheet"). Fix: `base-uri 'self' http: https:` in `vercel.json`. Reproduced and verified in a headless browser under the production headers.
+- Known limit: fonts from sites that do not send CORS headers are refused by the browser, so those pages fall back to a system font. Scripts never run in a snapshot, so videos, carousels and menus that need JavaScript stay static.
