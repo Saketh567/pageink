@@ -1,3 +1,27 @@
 # PageInk
 
-An iPad-first PWA for marking up real web pages with Apple Pencil: import a page, then ink, highlight and annotate it, and keep it all offline. See [PLAN.md](PLAN.md) for the full build plan.
+An iPad-first web app (PWA) for marking up real web pages with Apple Pencil. Import a page, then ink, highlight and annotate it directly, instead of screenshotting and drawing on the screenshot. Everything is stored on the device and works offline.
+
+**Version 1.0.0** includes: installable app, sample page viewer, pressure-sensitive pen, highlighter, eraser, undo/redo, toolbar, and local autosave. Page import, anchored highlights and notes, export and sharing are next; see [PLAN.md](PLAN.md).
+
+## Run it
+
+```
+npm install
+npm run dev        # http://localhost:5173
+npm test           # unit tests
+npm run e2e        # browser tests (run `npx playwright install chromium webkit` once)
+npm run build
+```
+
+Add `?debug=1` to the URL for an on-screen Pencil event log and a console.
+
+## Deploy
+
+Push to GitHub and import the repo in Vercel (framework: Vite, no settings needed). Every push to `main` deploys to production and every other branch gets a preview URL you can open on the iPad. Then use Share > Add to Home Screen.
+
+## Docs
+
+- [PLAN.md](PLAN.md): full build plan and roadmap
+- [docs/DECISIONS.md](docs/DECISIONS.md): key technical decisions
+- [docs/IPAD-CHECKLIST.md](docs/IPAD-CHECKLIST.md): what to test on the iPad

@@ -1,7 +1,8 @@
 {
   "name": "pageink",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "PageInk: mark up real web pages with Apple Pencil on iPad",
   "type": "module",
   "scripts": {
     "dev": "vite",
