@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks'
 import { MEANINGS } from '../export/study-sheet.ts'
 import { revealHidden } from '../viewer/widgets.ts'
-import { actions, activeViewer, canRedo, canUndo, color, drawWithFinger, go, margin, marks, meaning, mode, notice, panelOpen, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
+import { actions, activeViewer, currentPage, canRedo, canUndo, color, drawWithFinger, go, margin, marks, meaning, mode, notice, panelOpen, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
 
 // Line icons (Lucide, ISC licence), 24x24, stroke only.
 const ICONS = {
@@ -16,6 +16,7 @@ const ICONS = {
   note: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', 'M7 8h10', 'M7 12h6'],
   list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
   expand: ['m7 15 5 5 5-5', 'm7 9 5-5 5 5'],
+  refresh: ['M21 12a9 9 0 1 1-3-6.7L21 8', 'M21 3v5h-5'],
   palette: ['M12 22a10 10 0 1 1 10-10c0 3-2 4-4 4h-2a2 2 0 0 0-1 3.5A1.5 1.5 0 0 1 12 22Z', 'M7.5 11h.01', 'M12 7h.01', 'M16.5 11h.01'],
   lane: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M15 3v18'],
 }
@@ -124,6 +125,11 @@ export function ToolTray() {
         {markup && (
           <button class={`morebtn ${more ? 'on' : ''}`} aria-label="More tools" aria-pressed={more} onClick={() => setMore(!more)}>
             <Icon name="palette" />
+          </button>
+        )}
+        {currentPage.value?.url && (
+          <button aria-label="Reload with full rendering" title="Not seeing everything? Load the full page, scripts and all" onClick={() => actions.recapture()}>
+            <Icon name="refresh" />
           </button>
         )}
         <button aria-label="Expand all sections" title="Open every dropdown and FAQ" onClick={expandAll}><Icon name="expand" /></button>

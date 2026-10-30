@@ -41,6 +41,14 @@ describe('importUrl fallback', () => {
     },
   )
 
+  test('a big page that is nearly all script data (products arrive by script) is rendered', async () => {
+    const shell = `<!doctype html><title>Shop</title><h1>Shoes</h1><p>${'a few words of text. '.repeat(30)}</p><script>${'x'.repeat(150_000)}</script>`
+    const calls = stubApi({ fetch: ok(shell), render: ok() })
+    const page = await importUrl('https://shop.example/shoes', 1280, 'k')
+    expect(calls).toEqual(['fetch', 'render'])
+    expect(page.captureMethod).toBe('render')
+  })
+
   test('does not render for a 404, a bad key or a blocked host', async () => {
     for (const [res, code] of [[err(404, 'UPSTREAM_404'), 'UPSTREAM_404'], [err(401, 'UNAUTHORIZED'), 'UNAUTHORIZED'], [err(400, 'BLOCKED_HOST'), 'BLOCKED_HOST']] as const) {
       const calls = stubApi({ fetch: res })

@@ -2,7 +2,7 @@ import { effect } from '@preact/signals'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { createEditor } from '../ink/editor.ts'
 import { sanitize, SANITIZER_VERSION } from '../import/sanitize.ts'
-import { importUrl } from '../import/import-url.ts'
+import { importUrl, recapturePage } from '../import/import-url.ts'
 import { findPageByUrl, getPage, getSnapshot, getSetting, listAnnotations, patchPage, putSnapshot, savePage, setSetting } from '../store/repo.ts'
 import { attachLinkTaps, type LinkTap } from '../viewer/links.ts'
 import { attachSideScroll } from '../viewer/scrollers.ts'
@@ -11,7 +11,7 @@ import { createViewer } from '../viewer/viewer.ts'
 import { HeatStrip } from './HeatStrip.tsx'
 import { MarksPanel } from './MarksPanel.tsx'
 import { NoteCard } from './NoteCard.tsx'
-import { activeViewer, appKey, canRedo, canUndo, currentPage, drawWithFinger, go, margin, mode, notice, panelOpen, trail } from './state.ts'
+import { activeViewer, appKey, canRedo, canUndo, actions, currentPage, drawWithFinger, go, margin, mode, notice, panelOpen, trail } from './state.ts'
 import { ToolTray } from './ToolTray.tsx'
 
 export function Reader({ pageId }: { pageId: string }) {
@@ -26,6 +26,7 @@ export function Reader({ pageId }: { pageId: string }) {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [missing, setMissing] = useState(false)
+  const [reload, setReload] = useState(0)
   const [prev, setPrev] = useState<{ id: string; title: string } | null>(null)
   const trailTop = trail.value[trail.value.length - 1]
 
@@ -98,7 +99,17 @@ export function Reader({ pageId }: { pageId: string }) {
       }
     })()
     return () => { cancelled = true; stop() }
-  }, [pageId])
+  }, [pageId, reload])
+
+  actions.recapture = () => {
+    if (following.current) return
+    following.current = true
+    setError('')
+    void recapturePage(pageId, 'render', appKey.value, setBusy)
+      .then(() => { notice.value = 'Loaded the full page. Your marks are kept.'; setReload((n) => n + 1) })
+      .catch((e) => setError(e instanceof Error ? e.message : 'Could not load the full page.'))
+      .finally(() => { following.current = false; setBusy('') })
+  }
 
   /** Opens another page: the copy you already have, or a fresh import. A Back chip then leads back to where you came from. */
   async function followLink(href: string, fromId: string, layout: number) {

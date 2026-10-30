@@ -69,4 +69,4 @@ export const marksApi = {
 }
 
 /** Filled in by the editor once a page is open. */
-export const actions = { undo() {}, redo() {} }
+export const actions = { undo() {}, redo() {}, recapture() {} }

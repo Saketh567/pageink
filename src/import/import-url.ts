@@ -1,4 +1,4 @@
-import { findPageByUrl, getPage, putSnapshot, savePage } from '../store/repo.ts'
+import { findPageByUrl, getPage, patchPage, putSnapshot, savePage } from '../store/repo.ts'
 import type { Page } from '../store/schema.ts'
 import { inspectHtml, sanitize, SANITIZER_VERSION } from './sanitize.ts'
 
@@ -93,7 +93,9 @@ export async function importUrl(
   const again = await findPageByUrl(r.finalUrl) // the address may have redirected to a page you already have
   if (again) return again
   const info = inspectHtml(r.html)
-  if (method === 'fetch' && (info.textLength < 200 || info.emptyRoot)) {
+  // little readable text, or a big file that is nearly all script data (a shop whose products arrive by script), means the content is not in it
+  const scriptHeavy = info.textLength < 1500 && r.html.length > 100_000
+  if (method === 'fetch' && (info.textLength < 200 || info.emptyRoot || scriptHeavy)) {
     onProgress('Rendering JavaScript…')
     try {
       r = await callApi('/api/render', r.finalUrl, key)
@@ -109,4 +111,20 @@ export async function importUrl(
 
 export async function pageExists(id: string) {
   return !!(await getPage(id))
+}
+
+/**
+ * Capture a saved page again, keeping its marks (they find their words again). `render` runs the site's scripts first, which fills in
+ * shops and apps whose content arrives by script; `fetch` is the quick plain copy.
+ */
+export async function recapturePage(pageId: string, how: 'render' | 'fetch', key: string, onProgress: (msg: string) => void = () => {}): Promise<Page> {
+  const page = await getPage(pageId)
+  if (!page?.url) throw new ImportError('BAD_URL', 'This page was imported from a file, so there is no address to load again.')
+  onProgress(how === 'render' ? 'Loading the full page, this can take up to a minute…' : 'Fetching page…')
+  const r = await callApi(how === 'render' ? '/api/render' : '/api/fetch', page.url, key)
+  const html = sanitize(r.html, r.finalUrl)
+  await putSnapshot({ pageId, html, sanitizerVersion: SANITIZER_VERSION })
+  const next = { captureMethod: how === 'render' ? 'render' : 'fetch', capturedAt: new Date().toISOString(), docHeight: 0, textHash: await sha256(new DOMParser().parseFromString(html, 'text/html').body.textContent ?? '') } as const
+  await patchPage(pageId, next)
+  return { ...page, ...next }
 }

@@ -69,3 +69,5 @@ Run on the Vercel preview URL (or production), in Safari first, then from the Ho
 - [ ] Open a site with an FAQ: tap a question (Read mode) and it opens; Expand all opens the rest.
 - [ ] Tap a link to another page of the same site: it opens, and the Back chip returns.
 - [ ] In Mark mode, tap a FAQ question and a link with your finger: they open without switching to Read. The Pencil still marks.
+- [ ] On a shop page with a carousel: swipe it sideways with a finger; marks on a slide go with it and disappear when the slide does.
+- [ ] On a shop whose products are missing, tap the reload icon (Reload with full rendering) and check the products and their pictures appear.

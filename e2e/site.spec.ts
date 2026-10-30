@@ -171,3 +171,31 @@ test('marks on a carousel slide go with it when the carousel scrolls sideways', 
   await expect.poll(() => frame(page).locator('#rail').evaluate((e) => e.scrollLeft)).toBe(0)
   await expect(marks).toHaveCount(1)
 })
+
+test('"Reload with full rendering" fills in the page and keeps the marks', async ({ page }) => {
+  const thin = '<!doctype html><title>Shop</title><body style="margin:0;font:20px Georgia"><h1>Shoes</h1><p id="para" style="margin:24px 0">The warranty covers manufacturing defects for two full years from purchase.</p><p>' + 'Shipping, returns and care information for every pair we sell is listed below the fold. '.repeat(5) + '</p></body>'
+  const full = thin.replace('</body>', '<ul id="grid"><li>Air Runner, $120</li><li>Trail Pro, $140</li></ul></body>')
+  const calls: string[] = []
+  await page.route('**/api/fetch', (route) => { calls.push('fetch'); void route.fulfill({ json: { html: thin, finalUrl: 'https://shop.example/list', status: 200 } }) })
+  await page.route('**/api/render', (route) => { calls.push('render'); void route.fulfill({ json: { html: full, finalUrl: 'https://shop.example/list', status: 200 } }) })
+  await page.setViewportSize({ width: 820, height: 1180 })
+  await page.goto('/')
+  await page.getByRole('textbox', { name: 'Web address' }).fill('https://shop.example/list')
+  await page.getByRole('button', { name: 'Import', exact: true }).click()
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
+  await expect(frame(page).getByText('Air Runner')).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Mark text' }).click()
+  const box = (await frame(page).locator('#para').boundingBox())!
+  await page.mouse.move(box.x + 30, box.y + 12)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 120, box.y + 12, { steps: 8 })
+  await page.mouse.up()
+  const marks = page.locator('svg.viewer-ink g[data-layer=highlights] > g')
+  await expect(marks).toHaveCount(1)
+
+  await page.getByRole('button', { name: 'Reload with full rendering' }).click()
+  await expect(frame(page).getByText('Air Runner')).toBeVisible()
+  await expect(marks).toHaveCount(1) // the highlight found its words again
+  expect(calls).toEqual(['fetch', 'render'])
+})

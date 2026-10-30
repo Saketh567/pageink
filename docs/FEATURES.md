@@ -14,6 +14,8 @@ Status: **Done** (shipped and tested), **Next** (planned), **Idea** (not committ
 | C6 | Everything stays on the device | Library, ink and marks live in IndexedDB. Backup and restore as a file. | Done |
 | C7 | Organise | Collections, tags, sort, grid/list, themes and accent colours. | Done |
 | C8 | Dropdowns, FAQs and tabs readable | Tap a header in Read mode to open or close it; "Expand all sections" opens everything; text a site fades in with scripts is shown at once; a mark inside a closed section reopens it. | Done |
+| C10 | Carousels and wide tables | A sideways swipe (or shift+wheel) over a carousel scrolls it. Marks on a slide go with it, are cut off at the carousel's edge, and vanish when their slide is out of sight. | Done |
+| C11 | Load the full page | Shops and apps that build their content with scripts: the reader's "Reload with full rendering" button loads the page in a real browser (scrolled top to bottom so lazy images load) and replaces the saved copy; marks are kept. | Done |
 | C9 | Move between pages of a site | A link to another page of the same site imports and opens it right away; a "Back to <title>" chip returns. Links to other sites ask first. | Done |
 
 ## Specifications that apply to every feature
