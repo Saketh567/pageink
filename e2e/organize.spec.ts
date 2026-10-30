@@ -14,10 +14,7 @@ async function seed(page: Page) {
     const html = `<!doctype html><title>${PAGES[host]}</title><h1>${PAGES[host]}</h1>${'<p>Readable text so this counts as a content page. </p>'.repeat(12)}`
     r.fulfill({ json: { html, finalUrl: `https://${host}/`, status: 200 } })
   })
-  await page.goto('/#/settings')
-  await page.getByLabel('Personal key').fill('k')
-  await page.getByLabel('Personal key').blur()
-  await page.getByRole('button', { name: '‹ Library' }).click()
+  await page.goto('/') // no key needed: importing works from the app itself
   for (const host of Object.keys(PAGES)) {
     await page.getByLabel('Web address').fill(`https://${host}/`)
     await page.getByRole('button', { name: 'Import', exact: true }).click()

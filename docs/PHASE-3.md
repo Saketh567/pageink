@@ -2,6 +2,8 @@
 
 Supersedes PLAN.md section 5, Phase 3. Phases 0 to 2 are built; Phase 4 onward is unchanged.
 
+**Status: built** except P3.15 (layer toggles, clean read) and P3.20 (first-run tour); see "Access without a key, and Phase 3" in docs/DECISIONS.md for decisions, deviations and known limits.
+
 **One sentence:** your marks stop being pixels on top of a page and become things that belong to the page's words, that you can navigate, group by meaning, spotlight, and walk away with as a study sheet.
 
 Phase 2 answered "how does a page get in". Phase 3 answers "what do I do with it once it is here, and why does it feel better than a screenshot".

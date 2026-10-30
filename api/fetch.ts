@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { checkAuth } from './_lib/auth.ts'
+import { checkAccess, clientIp } from './_lib/auth.ts'
 import { fetchLimiter } from './_lib/limits.ts'
 import { FetchError, safeFetch } from './_lib/safe-fetch.ts'
 
@@ -11,10 +11,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store')
   if (req.method !== 'POST') return fail(res, 405, 'BAD_URL', 'POST only')
 
-  const auth = checkAuth(req.headers.authorization, process.env.APP_KEY)
-  if (auth === 'unconfigured') return fail(res, 503, 'UNAUTHORIZED', 'Server key not configured')
-  if (auth === 'unauthorized') return fail(res, 401, 'UNAUTHORIZED', 'Key rejected')
-  if (!fetchLimiter()) return fail(res, 429, 'RATE_LIMITED', 'Too many requests, try again in a minute')
+  if (checkAccess(req.headers, process.env.APP_KEY) !== 'ok') return fail(res, 401, 'UNAUTHORIZED', 'Requests must come from the PageInk app')
+  if (!fetchLimiter(clientIp(req.headers))) return fail(res, 429, 'RATE_LIMITED', 'Too many requests, try again in a minute')
 
   const url = typeof req.body?.url === 'string' ? req.body.url : ''
   try {

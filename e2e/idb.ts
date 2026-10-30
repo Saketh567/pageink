@@ -17,6 +17,20 @@ export const savedSetting = (page: Page, key: string) =>
     key,
   )
 
+/** The page's saved reading position and margin-lane state. */
+export const savedView = (page: Page, pageId: string) =>
+  page.evaluate(
+    (id) =>
+      new Promise<{ scrollTop: number; margin?: boolean } | null>((resolve) => {
+        const open = indexedDB.open('pageink')
+        open.onsuccess = () => {
+          const q = open.result.transaction('pages').objectStore('pages').get(id)
+          q.onsuccess = () => resolve(q.result?.view ?? null)
+        }
+      }),
+    pageId,
+  )
+
 export const savedAnnotations = (page: Page) =>
   page.evaluate(
     () =>

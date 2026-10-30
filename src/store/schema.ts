@@ -25,6 +25,8 @@ export interface Page {
   cover?: string
   description?: string
   openedAt?: ISO
+  /** Where you left off, in document pixels, and whether the margin lane was open. */
+  view?: { scrollTop: number; margin?: boolean }
   createdAt: ISO
   updatedAt: ISO
 }
@@ -65,4 +67,12 @@ export interface Annotation {
   orphaned?: true
   ink?: Stroke
   tags?: string[]
+  /** Highlights and notes carry a meaning (Important, Question, ...) that sets their colour and grouping. */
+  meaning?: 'important' | 'question' | 'idea' | 'confusing' | 'issue'
+  /** rects is a cache; it is recomputed from anchor.text whenever the page loads */
+  highlight?: { rects: Rect[]; scope: 'words' | 'sentence' | 'block' }
+  note?: { text: string }
+  /** Margin ink: points at the element it belongs to, so a leader line can be drawn. */
+  lane?: 'margin'
+  leader?: { css: string }
 }

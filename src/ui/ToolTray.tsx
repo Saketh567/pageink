@@ -1,4 +1,5 @@
-import { actions, canRedo, canUndo, color, drawWithFinger, go, mode, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
+import { MEANINGS } from '../export/study-sheet.ts'
+import { actions, canRedo, canUndo, color, drawWithFinger, go, margin, marks, meaning, mode, panelOpen, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
 
 // Line icons (Lucide, ISC licence), 24x24, stroke only.
 const ICONS = {
@@ -9,6 +10,10 @@ const ICONS = {
   undo: ['M3 7v6h6', 'M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13'],
   redo: ['M21 7v6h-6', 'M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7'],
   finger: ['M22 14a8 8 0 0 1-8 8', 'M18 11v-1a2 2 0 0 0-2-2a2 2 0 0 0-2 2', 'M14 10V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1', 'M10 9.5V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v10', 'M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15'],
+  text: ['M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1', 'M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5', 'M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1', 'M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7', 'M9 7v10'],
+  note: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', 'M7 8h10', 'M7 12h6'],
+  list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
+  lane: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M15 3v18'],
 }
 
 function Icon({ name }: { name: keyof typeof ICONS }) {
@@ -19,7 +24,9 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
   )
 }
 
-const TOOLS: Array<[Tool, keyof typeof ICONS, string]> = [['pen', 'pen', 'Pen'], ['highlighter', 'highlighter', 'Highlighter'], ['eraser', 'eraser', 'Eraser']]
+const TOOLS: Array<[Tool, keyof typeof ICONS, string]> = [
+  ['mark', 'text', 'Mark text'], ['note', 'note', 'Note'], ['pen', 'pen', 'Pen'], ['highlighter', 'highlighter', 'Highlighter'], ['eraser', 'eraser', 'Eraser'],
+]
 
 function dragTray(e: PointerEvent) {
   const handle = e.currentTarget as HTMLElement
@@ -37,6 +44,8 @@ function dragTray(e: PointerEvent) {
 
 export function ToolTray() {
   const markup = mode.value === 'markup'
+  const t = tool.value
+  const anchored = t === 'mark' || t === 'note'
   return (
     <div class={`tray edge-${trayEdge.value}`} role="toolbar" aria-label="Markup tools">
       <div class="grp">
@@ -53,27 +62,38 @@ export function ToolTray() {
       {markup && (
         <>
           <div class="grp">
-            {TOOLS.map(([t, icon, label]) => (
-              <button key={t} class={tool.value === t ? 'on' : ''} aria-label={label} aria-pressed={tool.value === t} onClick={() => (tool.value = t)}>
+            {TOOLS.map(([id, icon, label]) => (
+              <button key={id} class={t === id ? 'on' : ''} aria-label={label} aria-pressed={t === id} onClick={() => (tool.value = id)}>
                 <Icon name={icon} />
               </button>
             ))}
           </div>
-          <div class="grp">
-            {PALETTE.map((c) => (
-              <button key={c} class={`swatch ${color.value === c ? 'on' : ''}`} style={{ background: c }} aria-label={`Colour ${c}`} aria-pressed={color.value === c} onClick={() => (color.value = c)} />
-            ))}
-            <label class="swatch custom" aria-label="Custom colour">
-              <input type="color" value={color.value} onInput={(e) => (color.value = (e.target as HTMLInputElement).value)} />
-            </label>
-          </div>
-          <div class="grp">
-            {([2, 4, 8] as const).map((s) => (
-              <button key={s} class={size.value === s ? 'on' : ''} aria-label={`Size ${s}`} aria-pressed={size.value === s} onClick={() => (size.value = s)}>
-                <i class="dot" style={{ width: s * 2 + 4 + 'px', height: s * 2 + 4 + 'px' }} />
-              </button>
-            ))}
-          </div>
+          {anchored && (
+            <div class="grp" role="group" aria-label="Meaning">
+              {MEANINGS.map(([id, label, hex]) => (
+                <button key={id} class={`swatch ${meaning.value === id ? 'on' : ''}`} style={{ background: hex }} title={label} aria-label={`Meaning ${label}`} aria-pressed={meaning.value === id} onClick={() => (meaning.value = id)} />
+              ))}
+            </div>
+          )}
+          {(t === 'pen' || t === 'highlighter') && (
+            <>
+              <div class="grp">
+                {PALETTE.map((c) => (
+                  <button key={c} class={`swatch ${color.value === c ? 'on' : ''}`} style={{ background: c }} aria-label={`Colour ${c}`} aria-pressed={color.value === c} onClick={() => (color.value = c)} />
+                ))}
+                <label class="swatch custom" aria-label="Custom colour">
+                  <input type="color" value={color.value} onInput={(e) => (color.value = (e.target as HTMLInputElement).value)} />
+                </label>
+              </div>
+              <div class="grp">
+                {([2, 4, 8] as const).map((s) => (
+                  <button key={s} class={size.value === s ? 'on' : ''} aria-label={`Size ${s}`} aria-pressed={size.value === s} onClick={() => (size.value = s)}>
+                    <i class="dot" style={{ width: s * 2 + 4 + 'px', height: s * 2 + 4 + 'px' }} />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <div class="grp">
             <button disabled={!canUndo.value} aria-label="Undo" onClick={() => actions.undo()}><Icon name="undo" /></button>
             <button disabled={!canRedo.value} aria-label="Redo" onClick={() => actions.redo()}><Icon name="redo" /></button>
@@ -83,6 +103,13 @@ export function ToolTray() {
           </div>
         </>
       )}
+      <div class="grp">
+        <button class={margin.value ? 'on' : ''} aria-label="Margin lane" aria-pressed={margin.value} onClick={() => (margin.value = !margin.value)}><Icon name="lane" /></button>
+        <button class={`withbadge ${panelOpen.value ? 'on' : ''}`} aria-label="Marks" aria-pressed={panelOpen.value} onClick={() => (panelOpen.value = !panelOpen.value)}>
+          <Icon name="list" />
+          {marks.value.length > 0 && <b class="badge">{marks.value.length}</b>}
+        </button>
+      </div>
     </div>
   )
 }

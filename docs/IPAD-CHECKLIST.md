@@ -20,6 +20,17 @@ Run on the Vercel preview URL (or production), in Safari first, then from the Ho
 - [ ] Toolbar can be dragged to the top, left, right and back; position is remembered.
 - [ ] "Draw with finger" (hand icon) lets a finger draw; Reading mode lets it scroll again.
 
+## Phase 3: living marks
+- [ ] Import works with no key typed anywhere (Settings should only show an optional access key).
+- [ ] Mark text: drag the Pencil over words and the highlight snaps to whole words; no Safari text-selection popup or magnifier appears.
+- [ ] Hold the Pencil still at the end of a drag: it grows to the sentence, then the paragraph; the hold feels deliberate, not accidental.
+- [ ] Meaning colours change the highlight colour; Note: tap a word, Scribble handwriting becomes text in the note card.
+- [ ] Marks panel (list icon): jump to a mark, search, filter by meaning, delete; Spotlight dims everything but one highlight and a tap ends it.
+- [ ] Heat strip on the right edge shows ticks and jumps; Pencil strokes near the right edge still draw.
+- [ ] Margin lane: handwrite beside the page, a leader line reaches the paragraph; close and reopen the page and it is all still there.
+- [ ] Share study sheet opens the iPad share sheet with Markdown grouped by meaning.
+- [ ] Close and reopen a page: it returns to where you were reading. Rotate: marks stay on their words.
+
 ## Library and organisation
 - [ ] Landscape: sidebar with collections and tags; portrait: the same filters as a row of chips across the top.
 - [ ] New collection (colour and name); open a card's "..." and file it into the collection, add tags, pin it.

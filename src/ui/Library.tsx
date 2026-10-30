@@ -55,7 +55,6 @@ export function Library() {
   const submit = (e: Event) => {
     e.preventDefault()
     if (!url.trim()) return
-    if (!appKey.value) return setError('Add your personal key in Settings first.')
     void run(() => importUrl(url, width, appKey.value, setBusy))
   }
 

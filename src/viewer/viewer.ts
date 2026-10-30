@@ -14,6 +14,13 @@ export interface Viewer {
   /** Top-left of the scaled document inside the scroll container (non-zero when centred). */
   contentOffset(): Pt
   clientToDoc(cx: number, cy: number): Pt
+  docToClient(x: number, y: number): Pt
+  /** Optional blank strip beside the page for handwriting in the margin. */
+  readonly lane: boolean
+  readonly laneWidth: number
+  setLane(on: boolean): void
+  /** Called whenever the page height is (re)measured: fonts and images arriving can move text. */
+  onLayout(cb: () => void): void
   setScale(s: number, focusClient?: Pt): void
   fit(): void
   onViewChange(cb: () => void): void
@@ -49,18 +56,28 @@ export async function createViewer(host: HTMLElement, html: string, layoutWidth:
   let scale = 1
   let fitMode = true
   const listeners: Array<() => void> = []
+  const layoutListeners: Array<() => void> = []
+  const LANE = 320
+  let laneOn = false
+  const totalWidth = () => layoutWidth + (laneOn ? LANE : 0)
+  const laneEl = el('div', 'viewer-lane')
+  laneEl.style.left = layoutWidth + 'px'
+  laneEl.style.width = LANE + 'px'
+  laneEl.hidden = true
+  wrapper.prepend(laneEl)
   const notify = () => listeners.forEach((cb) => cb())
 
   function applySize() {
-    sizer.style.width = layoutWidth * scale + 'px'
+    sizer.style.width = totalWidth() * scale + 'px'
     sizer.style.height = docHeight * scale + 'px'
-    wrapper.style.width = layoutWidth + 'px'
+    wrapper.style.width = totalWidth() + 'px'
     wrapper.style.height = docHeight + 'px'
     wrapper.style.transform = `scale(${scale})`
     iframe.style.height = docHeight + 'px'
-    svg.setAttribute('width', String(layoutWidth))
+    svg.setAttribute('width', String(totalWidth()))
     svg.setAttribute('height', String(docHeight))
-    svg.setAttribute('viewBox', `0 0 ${layoutWidth} ${docHeight}`)
+    svg.setAttribute('viewBox', `0 0 ${totalWidth()} ${docHeight}`)
+    laneEl.style.height = docHeight + 'px'
   }
 
   function measure() {
@@ -79,6 +96,7 @@ export async function createViewer(host: HTMLElement, html: string, layoutWidth:
     docHeight = h
     applySize()
     notify()
+    layoutListeners.forEach((cb) => cb())
   }
 
   const loaded = new Promise<void>((resolve) => iframe.addEventListener('load', () => resolve(), { once: true }))
@@ -100,6 +118,15 @@ export async function createViewer(host: HTMLElement, html: string, layoutWidth:
     get scale() { return scale },
     contentOffset: () => ({ x: sizer.offsetLeft, y: sizer.offsetTop }),
     clientToDoc: (cx, cy) => clientToDoc(cx, cy, sizer.getBoundingClientRect(), scale),
+    docToClient: (x, y) => { const r = sizer.getBoundingClientRect(); return { x: r.left + x * scale, y: r.top + y * scale } },
+    get lane() { return laneOn },
+    laneWidth: LANE,
+    setLane(on) {
+      laneOn = on
+      laneEl.hidden = !on
+      if (fitMode) viewer.fit(); else { applySize(); notify() }
+    },
+    onLayout: (cb) => void layoutListeners.push(cb),
     setScale(next, focusClient) {
       const rect = container.getBoundingClientRect()
       const fc = focusClient
@@ -116,7 +143,7 @@ export async function createViewer(host: HTMLElement, html: string, layoutWidth:
       notify()
     },
     fit() {
-      scale = clampScale(container.clientWidth / layoutWidth)
+      scale = clampScale(container.clientWidth / totalWidth())
       fitMode = true
       applySize()
       notify()

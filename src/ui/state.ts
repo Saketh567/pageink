@@ -1,7 +1,10 @@
 import { signal } from '@preact/signals'
+import type { Mark, Meaning } from '../export/study-sheet.ts'
 import type { Sort } from '../store/organize.ts'
+import type { Page } from '../store/schema.ts'
+import type { Viewer } from '../viewer/viewer.ts'
 
-export type Tool = 'pen' | 'highlighter' | 'eraser'
+export type Tool = 'pen' | 'highlighter' | 'eraser' | 'mark' | 'note'
 export type Edge = 'top' | 'bottom' | 'left' | 'right'
 
 export const PALETTE = ['#1d1d1f', '#ff3b30', '#ff9500', '#ffd60a', '#34c759', '#0a84ff', '#5e5ce6', '#ff2d55']
@@ -41,6 +44,25 @@ export const accent = signal(ACCENTS[0])
 export const density = signal<Density>('comfortable')
 export const view = signal<'grid' | 'list'>('grid')
 export const sort = signal<Sort>('recent')
+
+// ----- the open page: marks, notes, spotlight (filled in by the editor while a page is open)
+export const meaning = signal<Meaning>('important')
+export const marks = signal<Mark[]>([])
+export const openNote = signal<string | null>(null)
+export const spotlightId = signal<string | null>(null)
+export const panelOpen = signal(false)
+export const margin = signal(false)
+export const activeViewer = signal<Viewer | null>(null)
+export const currentPage = signal<Page | null>(null)
+/** Bumped on scroll, zoom and layout so overlays (note cards, the heat strip) re-position themselves. */
+export const viewTick = signal(0)
+export const marksApi = {
+  updateNote(_id: string, _text: string) {},
+  setMeaning(_id: string, _m: Meaning) {},
+  remove(_id: string) {},
+  reveal(_id: string) {},
+  spotlight(_id: string | null) {},
+}
 
 /** Filled in by the editor once a page is open. */
 export const actions = { undo() {}, redo() {} }

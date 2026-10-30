@@ -215,3 +215,52 @@ select.field { appearance: none; padding-right: 36px; background-image: url("dat
   .top select.field { min-width: 0; width: 130px; }
 }
 @media (max-width: 560px) { .themes { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- Phase 3: marks, notes, margin lane ---------- */
+.viewer-lane { position: absolute; top: 0; background-color: var(--surface-2); background-image: repeating-linear-gradient(transparent 0 31px, var(--line) 31px 32px); border-left: 2px dashed var(--line); pointer-events: none; }
+.viewer-lane[hidden] { display: none; }
+svg .pulse rect, svg .pulse circle { fill: var(--accent); animation: pulse 0.9s ease-out forwards; }
+@keyframes pulse { from { opacity: 0.55; } to { opacity: 0; } }
+svg .spotlight { animation: fade 0.18s ease; }
+.tray .withbadge { position: relative; }
+.badge { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); font: 700 11px/18px var(--font); text-align: center; }
+.tray button.on .badge { background: var(--accent-ink); color: var(--accent); }
+
+.notecard { position: fixed; z-index: 25; display: flex; flex-direction: column; gap: 10px; padding: 12px; background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); border: 1px solid var(--line); }
+.notecard textarea { width: 100%; resize: none; padding: 10px 12px; border: 1px solid transparent; border-radius: var(--r-sm); background: var(--surface-2); font: inherit; }
+.notecard textarea:focus { border-color: var(--accent); outline: none; }
+.notecard .row, .panel .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.row.end { justify-content: flex-end; }
+.sw.small { width: 26px; height: 26px; border-width: 2px; }
+.btn.sm { min-height: 36px; min-width: 36px; padding: 0; }
+
+.panel { position: fixed; z-index: 22; top: 0; right: 0; bottom: 0; width: min(380px, 100vw); display: flex; flex-direction: column; gap: 10px; padding: calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom)); background: var(--surface); box-shadow: var(--shadow); border-left: 1px solid var(--line); animation: slide 0.2s ease; overflow: auto; }
+@keyframes slide { from { transform: translateX(24px); opacity: 0; } }
+.panelhead { display: flex; align-items: center; justify-content: space-between; }
+.panelhead h2 { margin: 0; font: 700 22px/1 var(--font-display); }
+.panelhead h2 span { color: var(--muted); font-weight: 500; font-size: 16px; margin-left: 6px; }
+.panel .search { position: relative; }
+.panel .search svg { position: absolute; left: 13px; top: 12px; opacity: 0.5; }
+.panel .search .field { padding-left: 42px; }
+.marklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.markrow { display: flex; align-items: stretch; gap: 4px; background: var(--surface-2); border-radius: var(--r-sm); }
+.markmain { all: unset; cursor: pointer; flex: 1; display: flex; gap: 10px; padding: 10px 12px; min-width: 0; }
+.marktext { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.marktext .quote { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.marktext .marknote { color: var(--muted); font-size: 13px; }
+.marktext small { color: var(--muted); }
+.markrow .dotc { margin-top: 6px; }
+.markrow .btn { align-self: center; background: transparent; }
+.markrow .btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.attn { margin: 8px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.panelfoot { margin-top: auto; display: flex; align-items: center; gap: 12px; padding-top: 8px; }
+.empty.small { padding: 24px 8px; }
+
+.heat { position: fixed; z-index: 9; top: env(safe-area-inset-top); bottom: 0; right: 2px; width: 14px; pointer-events: none; }
+.heat .heatwin { position: absolute; left: 0; right: 0; background: var(--text); opacity: 0.14; border-radius: 4px; }
+.heat .tick { position: absolute; right: 0; width: 12px; height: 6px; margin-top: -3px; border: 0; padding: 0; border-radius: 3px; pointer-events: auto; box-shadow: 0 0 0 1px #0003; }
+.heat .tick::after { content: ""; position: absolute; inset: -9px -6px; }
+
+.sw[aria-pressed="true"] { border-color: var(--surface); box-shadow: 0 0 0 2px var(--text); }
+.panel .search { flex: none; }
+@media (min-width: 900px) { .has-panel .edge-bottom, .has-panel .edge-top { right: 380px; } }

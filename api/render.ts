@@ -1,7 +1,7 @@
 import chromium from '@sparticuz/chromium'
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import puppeteer from 'puppeteer-core'
-import { checkAuth } from './_lib/auth.ts'
+import { checkAccess, clientIp } from './_lib/auth.ts'
 import { validateTarget } from './_lib/guard.ts'
 import { renderLimiter } from './_lib/limits.ts'
 import { createRequestGuard } from './_lib/render-guard.ts'
@@ -18,10 +18,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store')
   if (req.method !== 'POST') return fail(res, 405, 'BAD_URL', 'POST only')
 
-  const auth = checkAuth(req.headers.authorization, process.env.APP_KEY)
-  if (auth === 'unconfigured') return fail(res, 503, 'UNAUTHORIZED', 'Server key not configured')
-  if (auth === 'unauthorized') return fail(res, 401, 'UNAUTHORIZED', 'Key rejected')
-  if (!renderLimiter()) return fail(res, 429, 'RATE_LIMITED', 'Too many renders, try again in a minute')
+  if (checkAccess(req.headers, process.env.APP_KEY) !== 'ok') return fail(res, 401, 'UNAUTHORIZED', 'Requests must come from the PageInk app')
+  if (!renderLimiter(clientIp(req.headers))) return fail(res, 429, 'RATE_LIMITED', 'Too many renders, try again in a minute')
 
   const target = validateTarget(typeof req.body?.url === 'string' ? req.body.url : '')
   if (!target.ok) return fail(res, 400, target.code, target.code)

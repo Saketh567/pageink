@@ -76,11 +76,11 @@ export function Settings() {
 
       <section class="card">
         <h2>Importing</h2>
-        <label class="lbl" for="key">Personal key</label>
-        <p class="hint">The key you set as APP_KEY on the server. It stays on this device and unlocks importing from a URL.</p>
+        <label class="lbl" for="key">Access key (optional)</label>
+        <p class="hint">Importing works without one. Only add a key if whoever runs your server asked you to.</p>
         <input id="key" class="field" type="password" autocomplete="off" autocapitalize="off" value={appKey.value}
           onChange={(e) => setPref('appKey', appKey, (e.target as HTMLInputElement).value.trim())} />
-        <div><button class="btn ghost" onClick={() => setPref('appKey', appKey, '')}>Forget key</button></div>
+        <div><button class="btn ghost" onClick={() => setPref('appKey', appKey, '')}>Remove key</button></div>
       </section>
 
       <section class="card">

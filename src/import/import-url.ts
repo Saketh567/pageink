@@ -17,7 +17,7 @@ const MESSAGES: Record<string, string> = {
   TOO_LARGE: 'That page is too large to import.',
   TIMEOUT: 'The site took too long to answer.',
   RATE_LIMITED: 'Too many imports, wait a minute and try again.',
-  UNAUTHORIZED: 'Key rejected. Check your key in Settings.',
+  UNAUTHORIZED: 'The server did not accept this request. If the server owner set an access key, add it in Settings.',
   SERVER: 'The PageInk server had a problem. Try again in a moment.',
   UPSTREAM_401: 'The site blocked the request (it may need a login or block automated access).',
   UPSTREAM_403: 'The site blocked the request (it may block automated access).',
@@ -30,7 +30,7 @@ interface ApiOk { html: string; finalUrl: string }
 async function callApi(path: string, url: string, key: string): Promise<ApiOk> {
   let res: Response
   try {
-    res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` }, body: JSON.stringify({ url }) })
+    res = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', ...(key ? { authorization: `Bearer ${key}` } : {}) }, body: JSON.stringify({ url }) })
   } catch {
     throw new ImportError('OFFLINE', 'You appear to be offline.')
   }

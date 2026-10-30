@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { checkAuth } from '../api/_lib/auth.ts'
-import { createLimiter } from '../api/_lib/limits.ts'
+import { checkAccess, checkAuth, clientIp } from '../api/_lib/auth.ts'
+import { createKeyedLimiter, createLimiter } from '../api/_lib/limits.ts'
 import { FetchError, MAX_BYTES, safeFetch, type SafeFetchDeps } from '../api/_lib/safe-fetch.ts'
 
 const html = (body: BodyInit, type = 'text/html; charset=utf-8', status = 200, extra: Record<string, string> = {}) =>
@@ -95,5 +95,40 @@ describe('createLimiter', () => {
     expect(allow()).toBe(false)
     t = 60_000
     expect(allow()).toBe(true)
+  })
+})
+
+describe('checkAccess (no key needed from the app itself)', () => {
+  test('allows requests from the app itself', () => {
+    expect(checkAccess({ 'sec-fetch-site': 'same-origin' }, undefined)).toBe('ok')
+    expect(checkAccess({ origin: 'https://pageink1.vercel.app', host: 'pageink1.vercel.app' }, undefined)).toBe('ok')
+    expect(checkAccess({ 'sec-fetch-site': 'same-origin' }, 'secret')).toBe('ok')
+  })
+  test('refuses other sites, bare requests and malformed origins', () => {
+    expect(checkAccess({ 'sec-fetch-site': 'cross-site' }, undefined)).toBe('unauthorized')
+    expect(checkAccess({ origin: 'https://evil.example', host: 'pageink1.vercel.app' }, undefined)).toBe('unauthorized')
+    expect(checkAccess({ origin: 'not a url', host: 'pageink1.vercel.app' }, undefined)).toBe('unauthorized')
+    expect(checkAccess({}, undefined)).toBe('unauthorized')
+    expect(checkAccess({ origin: 'https://pageink1.vercel.app.evil.example', host: 'pageink1.vercel.app' }, undefined)).toBe('unauthorized')
+  })
+  test('the optional key still works for scripts, and a wrong key does not', () => {
+    expect(checkAccess({ authorization: 'Bearer secret' }, 'secret')).toBe('ok')
+    expect(checkAccess({ authorization: 'Bearer wrong' }, 'secret')).toBe('unauthorized')
+    expect(checkAccess({ authorization: 'Bearer secret' }, undefined)).toBe('unauthorized')
+  })
+  test('clientIp takes the first forwarded address', () => {
+    expect(clientIp({ 'x-forwarded-for': '203.0.113.9, 10.0.0.1' })).toBe('203.0.113.9')
+    expect(clientIp({ 'x-real-ip': '198.51.100.2' })).toBe('198.51.100.2')
+    expect(clientIp({})).toBe('unknown')
+  })
+})
+
+describe('createKeyedLimiter', () => {
+  test('each visitor gets their own allowance and windows reset', () => {
+    let t = 0
+    const allow = createKeyedLimiter(2, 1000, () => t)
+    expect([allow('a'), allow('a'), allow('a'), allow('b')]).toEqual([true, true, false, true])
+    t = 1000
+    expect(allow('a')).toBe(true)
   })
 })
