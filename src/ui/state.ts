@@ -70,3 +70,6 @@ export const marksApi = {
 
 /** Filled in by the editor once a page is open. */
 export const actions = { undo() {}, redo() {}, recapture() {} }
+
+/** A newer version of the app has been installed in the background and is waiting for a reload. */
+export const updateReady = signal(false)

@@ -285,3 +285,4 @@ svg .spotlight { animation: fade 0.18s ease; }
   .tray .more { display: none; flex-basis: 100%; flex-wrap: wrap; justify-content: center; }
   .tray .more.open { display: flex; }
 }
+.updatechip { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); top: calc(12px + env(safe-area-inset-top)); padding: 10px 18px; border: 0; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 700; box-shadow: var(--shadow); }
