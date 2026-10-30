@@ -26,5 +26,8 @@ const fetchEach = createKeyedLimiter(20, 60_000)
 const fetchAll = createLimiter(150, 60_000)
 const renderEach = createKeyedLimiter(5, 60_000)
 const renderAll = createLimiter(20, 60_000)
+const assetEach = createKeyedLimiter(600, 60_000) // a page can have a few hundred pictures, so these allow a full archive each minute
+const assetAll = createLimiter(3000, 60_000)
+export const assetLimiter = (ip: string) => assetEach(ip) && assetAll()
 export const fetchLimiter = (ip: string) => fetchEach(ip) && fetchAll()
 export const renderLimiter = (ip: string) => renderEach(ip) && renderAll()

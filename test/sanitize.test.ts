@@ -175,3 +175,24 @@ describe('lazy-image attributes cannot smuggle unsafe addresses', () => {
     expect(d.getElementById('x')!.getAttribute('src')).toBeNull()
   })
 })
+
+describe('saved-file tokens survive being cleaned again (pages are re-cleaned when the sanitizer version rises)', () => {
+  const H = 'a'.repeat(64)
+  const html = `<!doctype html><html><head><style data-pk-orig="https://s.example/s.css">.i{background:url("pk-asset:${H}")}@font-face{src:url("pk-asset:${H}")}</style></head><body>` +
+    `<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-pk-src="pk-asset:${H}" data-pk-orig="https://s.example/a.png">` +
+    `<picture><source data-pk-srcset="pk-asset:${H}"><img data-pk-srcset="pk-asset:${H}" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"></picture>` +
+    `<div style="background:url(&quot;pk-asset:${H}&quot;)">x</div></body></html>`
+
+  test('data-pk-src, data-pk-srcset, data-pk-orig, <style> text and style attributes are all kept', () => {
+    const once = sanitize(html, 'https://s.example/')
+    const twice = sanitize(once, 'https://s.example/')
+    for (const out of [once, twice]) {
+      const doc = new DOMParser().parseFromString(out, 'text/html')
+      expect(doc.querySelector('img')!.getAttribute('data-pk-src')).toBe(`pk-asset:${H}`)
+      expect(doc.querySelector('img')!.getAttribute('data-pk-orig')).toBe('https://s.example/a.png')
+      expect(doc.querySelector('source')!.getAttribute('data-pk-srcset')).toBe(`pk-asset:${H}`)
+      expect(doc.querySelector('style[data-pk-orig]')!.textContent).toContain(`url("pk-asset:${H}")`)
+      expect(doc.querySelector('div')!.getAttribute('style')).toContain(`pk-asset:${H}`)
+    }
+  })
+})

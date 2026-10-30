@@ -2,6 +2,7 @@
  * Importing from a web address: reuse a saved copy, fetch quickly, fall back to the rendered browser for blocked
  * or script-built pages, and re-capture a saved page while keeping its marks.
  */
+import { archivePage } from '../archive/archiver.ts'
 import { findPageByUrl, getPage, patchPage, putPageText, putSnapshot, savePage } from '../store/repo.ts'
 import type { Page } from '../store/schema.ts'
 import { inspectHtml, sanitize, SANITIZER_VERSION } from './sanitize.ts'
@@ -111,7 +112,9 @@ export async function importUrl(
     }
   }
   onProgress('Saving…')
-  return storePage({ html: r.html, url: r.finalUrl, title: '', method, layoutWidth })
+  const page = await storePage({ html: r.html, url: r.finalUrl, title: '', method, layoutWidth })
+  void archivePage(page.id, { appKey: key }) // in the background: the page opens now and gets its pictures and styles saved meanwhile
+  return page
 }
 
 
@@ -128,6 +131,7 @@ export async function recapturePage(pageId: string, how: 'render' | 'fetch', key
   await putSnapshot({ pageId, html, sanitizerVersion: SANITIZER_VERSION })
   await putPageText(pageId, page.title, html)
   const next = { captureMethod: how === 'render' ? 'render' : 'fetch', capturedAt: new Date().toISOString(), docHeight: 0, textHash: await sha256(new DOMParser().parseFromString(html, 'text/html').body.textContent ?? '') } as const
-  await patchPage(pageId, next)
+  await patchPage(pageId, { ...next, offline: undefined })
+  void archivePage(pageId, { appKey: key })
   return { ...page, ...next }
 }

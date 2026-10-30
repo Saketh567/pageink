@@ -2,6 +2,7 @@
  * Settings: appearance, defaults, backup and restore.
  */
 import { useEffect, useState } from 'preact/hooks'
+import { archiveAll } from '../archive/archiver.ts'
 import { MAX_BACKUP_BYTES, parseBackup, restoreBackup, saveBackup } from '../store/backup.ts'
 import { getSetting } from '../store/repo.ts'
 import { setPref } from './appearance.ts'
@@ -27,6 +28,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 function DataCard() {
   const [info, setInfo] = useState({ used: 0, quota: 0, persisted: false, last: '' })
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [offline, setOffline] = useState('')
   const refresh = async () => {
     const e = await navigator.storage?.estimate?.()
     setInfo({ used: e?.usage ?? 0, quota: e?.quota ?? 0, persisted: !!(await navigator.storage?.persisted?.()), last: (await getSetting<string>('lastBackup')) ?? '' })
@@ -40,6 +42,17 @@ function DataCard() {
       await refresh()
     } catch {
       setMsg({ ok: false, text: 'Backup failed. Please try again.' })
+    }
+  }
+  /** Pages imported before pictures and styles were saved with them get their copy now, one at a time. */
+  async function saveAllOffline() {
+    setOffline('Starting…')
+    try {
+      const r = await archiveAll({ appKey: appKey.value, onProgress: (done, total) => done < total && setOffline(`Saving pages for offline: ${done} of ${total}…`) })
+      setOffline(r.partial ? `Saved ${plural(r.complete, 'page')} for offline. ${plural(r.partial, 'page')} could only be partly saved (some sites refuse downloads); open one and use the download button to try again.` : 'All pages are saved for offline.')
+      await refresh()
+    } catch {
+      setOffline('Saving stopped. Try again.')
     }
   }
   async function restore(file: File) {
@@ -72,6 +85,10 @@ function DataCard() {
           }} />
         </label>
       </div>
+      <div class="row">
+        <button class="btn" onClick={() => void saveAllOffline()}>Save all pages for offline</button>
+      </div>
+      {offline && <p class="hint" role="status">{offline}</p>}
       {msg && <p class={msg.ok ? 'hint' : 'error'} role={msg.ok ? 'status' : 'alert'}>{msg.text}</p>}
     </section>
   )

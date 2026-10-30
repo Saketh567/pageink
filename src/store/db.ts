@@ -9,7 +9,8 @@ interface PageInkDB extends DBSchema {
   pages: { key: string; value: Page; indexes: { siteOrigin: string; updatedAt: string } }
   snapshots: { key: string; value: Snapshot; indexes: { assets: string } }
   annotations: { key: string; value: Annotation; indexes: { pageId: string } }
-  blobs: { key: string; value: { id: string; type: string; data: Blob } }
+  /** Saved pictures, styles and fonts, once each, keyed by the SHA-256 of their bytes. Stored as raw bytes (not a Blob): Safari is unreliable with Blobs in IndexedDB. */
+  blobs: { key: string; value: { id: string; type: string; data: ArrayBuffer } }
   settings: { key: string; value: { key: string; value: unknown } }
   collections: { key: string; value: Collection }
   texts: { key: string; value: PageText }

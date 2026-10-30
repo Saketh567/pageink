@@ -1,13 +1,13 @@
 /**
- * Downloads a page for import: public addresses only, redirects re-checked at every hop, the validated IP pinned
- * for the connection (defeats DNS rebinding), a size cap and a timeout.
+ * Downloads a page (or a picture, stylesheet or font used by one) for import: public addresses only, redirects re-checked at
+ * every hop, the validated IP pinned for the connection (defeats DNS rebinding), a size cap and a timeout.
  */
 import { lookup as dnsLookup } from 'node:dns/promises'
 import { Agent, fetch as undiciFetch } from 'undici'
 import { isPrivateIp, validateTarget } from './guard.ts'
 
 export type FetchErrorCode =
-  | 'BAD_URL' | 'BLOCKED_HOST' | 'NOT_HTML' | 'TOO_LARGE' | 'TIMEOUT' | `UPSTREAM_${number}`
+  | 'BAD_URL' | 'BLOCKED_HOST' | 'NOT_HTML' | 'NOT_ASSET' | 'TOO_LARGE' | 'TIMEOUT' | `UPSTREAM_${number}`
 
 export class FetchError extends Error {
   code: FetchErrorCode
@@ -46,7 +46,11 @@ const defaultRequest: NonNullable<SafeFetchDeps['request']> = async (url, { addr
   return undiciFetch(url, { dispatcher, signal, headers, redirect: 'manual' }) as unknown as Promise<Response>
 }
 
-export async function safeFetch(rawUrl: string, deps: SafeFetchDeps = {}): Promise<SafeFetchResult> {
+/**
+ * The shared, guarded download: validates the address, checks every host it resolves to, connects to the checked address, follows
+ * redirects by hand (each hop validated again) and returns the first successful response, unread.
+ */
+async function guardedGet(rawUrl: string, deps: SafeFetchDeps, accept: string): Promise<{ res: Response; finalUrl: string }> {
   const lookup = deps.lookup ?? defaultLookup
   const request = deps.request ?? defaultRequest
   const signal = AbortSignal.timeout(TIMEOUT_MS)
@@ -65,7 +69,7 @@ export async function safeFetch(rawUrl: string, deps: SafeFetchDeps = {}): Promi
 
     let res: Response
     try {
-      res = await request(v.url.href, { ...addrs[0], signal, headers: { 'user-agent': UA, accept: 'text/html,application/xhtml+xml' } })
+      res = await request(v.url.href, { ...addrs[0], signal, headers: { 'user-agent': UA, accept } })
     } catch (e) {
       if (signal.aborted) throw new FetchError('TIMEOUT')
       throw new FetchError('UPSTREAM_502', 'fetch failed') // never echo the network error: it would tell a caller what an address does
@@ -77,16 +81,42 @@ export async function safeFetch(rawUrl: string, deps: SafeFetchDeps = {}): Promi
       continue
     }
     if (res.status < 200 || res.status >= 300) throw new FetchError(`UPSTREAM_${res.status}`)
-    const type = res.headers.get('content-type') ?? ''
-    if (!/^(text\/html|application\/xhtml\+xml)/i.test(type)) throw new FetchError('NOT_HTML')
-    return { html: await readCapped(res, type), finalUrl: v.url.href, status: res.status }
+    return { res, finalUrl: v.url.href }
   }
   throw new FetchError('UPSTREAM_508', 'Too many redirects')
 }
 
-async function readCapped(res: Response, type: string): Promise<string> {
+export async function safeFetch(rawUrl: string, deps: SafeFetchDeps = {}): Promise<SafeFetchResult> {
+  const { res, finalUrl } = await guardedGet(rawUrl, deps, 'text/html,application/xhtml+xml')
+  const type = res.headers.get('content-type') ?? ''
+  if (!/^(text\/html|application\/xhtml\+xml)/i.test(type)) throw new FetchError('NOT_HTML')
+  return { html: decode(await readBytes(res), type), finalUrl, status: res.status }
+}
+
+const ASSET_ACCEPT = 'image/avif,image/webp,image/*,text/css,font/*;q=0.9,*/*;q=0.1'
+/** Pictures, styles and fonts only: nothing that could run as a page or script. */
+const ASSET_TYPE = /^(image\/(png|jpeg|gif|webp|avif|svg\+xml|x-icon|vnd\.microsoft\.icon)|text\/css|font\/(woff2|woff|ttf|otf)|application\/(font-woff2?|x-font-ttf|vnd\.ms-fontobject|font-sfnt))$/
+const FONT_BY_EXTENSION: Record<string, string> = { woff2: 'font/woff2', woff: 'font/woff', ttf: 'font/ttf', otf: 'font/otf' }
+
+export interface AssetResult { bytes: Uint8Array; type: string; finalUrl: string }
+
+/** One picture, stylesheet or font used by a page. Same address checks, pinning and caps as a page download. */
+export async function safeFetchAsset(rawUrl: string, deps: SafeFetchDeps = {}): Promise<AssetResult> {
+  const { res, finalUrl } = await guardedGet(rawUrl, deps, ASSET_ACCEPT)
+  let type = (res.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase()
+  if (type === 'application/octet-stream') {
+    // some hosts serve fonts without a type; accept that only when the file name says font
+    const ext = /\.(woff2?|ttf|otf)$/i.exec(new URL(finalUrl).pathname)?.[1]?.toLowerCase()
+    if (ext) type = FONT_BY_EXTENSION[ext]
+  }
+  if (!ASSET_TYPE.test(type)) throw new FetchError('NOT_ASSET')
+  return { bytes: await readBytes(res), type, finalUrl }
+}
+
+/** Reads a response body, giving up as soon as it passes the size cap. */
+async function readBytes(res: Response): Promise<Buffer> {
   const reader = res.body?.getReader()
-  if (!reader) return ''
+  if (!reader) return Buffer.alloc(0)
   const chunks: Uint8Array[] = []
   let total = 0
   for (;;) {
@@ -99,7 +129,10 @@ async function readCapped(res: Response, type: string): Promise<string> {
     }
     chunks.push(value)
   }
-  const bytes = Buffer.concat(chunks)
+  return Buffer.concat(chunks)
+}
+
+function decode(bytes: Buffer, type: string): string {
   const charset = /charset=["']?([\w-]+)/i.exec(type)?.[1] ?? 'utf-8'
   try {
     return new TextDecoder(charset).decode(bytes)

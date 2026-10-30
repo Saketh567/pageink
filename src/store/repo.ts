@@ -43,17 +43,24 @@ export async function listAnnotations(pageId: ID) {
   const all = await (await getDb()).getAllFromIndex('annotations', 'pageId', pageId)
   return all.filter((a) => !a.deleted)
 }
+/** A saved picture, style or font by its hash. */
+export async function getAsset(hash: string) {
+  return (await getDb()).get('blobs', hash)
+}
 export async function deletePage(id: ID) {
   const db = await getDb()
-  const tx = db.transaction(['pages', 'snapshots', 'annotations', 'texts'], 'readwrite')
+  const tx = db.transaction(['pages', 'snapshots', 'annotations', 'texts', 'blobs'], 'readwrite')
+  const snap = await tx.objectStore('snapshots').get(id)
   const keys = await tx.objectStore('annotations').index('pageId').getAllKeys(id)
-  await Promise.all([
-    tx.objectStore('pages').delete(id),
-    tx.objectStore('snapshots').delete(id),
-    tx.objectStore('texts').delete(id),
-    ...keys.map((k) => tx.objectStore('annotations').delete(k)),
-    tx.done,
-  ])
+  await tx.objectStore('pages').delete(id)
+  await tx.objectStore('snapshots').delete(id)
+  await tx.objectStore('texts').delete(id)
+  for (const k of keys) await tx.objectStore('annotations').delete(k)
+  // saved files go with the page, unless another page still uses them
+  for (const hash of snap?.assets ?? []) {
+    if (!(await tx.objectStore('snapshots').index('assets').count(hash))) await tx.objectStore('blobs').delete(hash)
+  }
+  await tx.done
 }
 
 /** The readable text of a page's HTML: no styles or scripts, spaces collapsed, capped. */

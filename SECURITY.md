@@ -18,6 +18,7 @@ Please do not open a public issue for a security problem. Use GitHub's private r
 - **Request-level rules in the browser** (`render-guard.ts`): no WebSockets, event streams, pings or media; at most 400 requests and 40 MB per render, so a page cannot use the renderer to flood another site.
 - **Browser hardening**: the package's `--disable-web-security` and `--disable-site-isolation-trials` flags are removed; WebRTC is off; the final address is re-checked, so Chrome's error page is never returned as if it were the site.
 - **Size and time caps**: 4 MB per page, 10 s to download, 16 s of scrolling and 20 s to load when rendering; responses over Vercel's limit are refused cleanly.
+- **Saved pictures, styles and fonts** come through `/api/asset`, which has the same checks (same-origin only, rate limited, public addresses only, pinned connection, redirects re-checked, 4 MB cap). It returns only pictures, stylesheets and fonts; anything else is refused. Responses carry `Content-Security-Policy: default-src 'none'; sandbox`, `Content-Disposition: attachment` and `nosniff`, so a stored file can never run as a page. SVGs are cleaned before they are stored, and saved files are only ever used as `blob:` pictures, styles and fonts.
 - **No information leaks**: errors never echo network details or the address; responses are never cached; URLs are never logged.
 
 ### 2. Imported pages must not run code or steal data
@@ -55,7 +56,7 @@ These are honest gaps, ordered by how much they matter.
 4. **Snapshots share the app's origin.** The sandbox has no scripts, but `allow-same-origin` is needed so the app can read the page to place marks. Everything therefore rests on the sanitizer. A stronger design serves snapshots from a separate origin; that is a larger redesign and is on the backlog. Mitigations: strict snapshot policy, no `allow-scripts`, DOMPurify kept current by weekly updates, sanitizer tests with hostile inputs.
 5. **`base-uri` allows http(s)** in the app's CSP so a snapshot's `<base>` can resolve relative pictures. It would matter only if an attacker could inject markup into the app's own document, which `script-src 'self'` and the sanitizer prevent.
 6. **A dependency advisory** (a memory-exhaustion issue in a protocol library bundled with `puppeteer-core`, which PageInk does not use) is open. Upgrading needs a matching Chrome build and a live render test; Dependabot will propose it.
-7. **Pages can track you.** A saved page loads its pictures and styles from the original site, which sees your address. `Referrer-Policy: no-referrer` stops it learning which page you were on.
+7. **Pages can track you until they are saved.** A page that has not been saved for offline still loads its pictures and styles from the original site, which sees your address. Once saved (the card says "Saved offline") it loads everything from your device. `Referrer-Policy: no-referrer` stops the site learning which page you were on in the meantime.
 
 ## For the project owner: dashboard steps that add real protection
 

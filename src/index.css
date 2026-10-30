@@ -286,3 +286,5 @@ svg .spotlight { animation: fade 0.18s ease; }
   .tray .more.open { display: flex; }
 }
 .updatechip { position: fixed; z-index: 30; left: 50%; transform: translateX(-50%); top: calc(12px + env(safe-area-inset-top)); padding: 10px 18px; border: 0; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-weight: 700; box-shadow: var(--shadow); }
+.savechip { position: fixed; z-index: 14; left: 12px; bottom: calc(96px + env(safe-area-inset-bottom)); margin: 0; padding: 8px 14px; border-radius: 999px; background: var(--tray); color: var(--text); font-size: 13px; font-weight: 600; box-shadow: var(--shadow); }
+.pagecard .offline { color: var(--accent); font-weight: 600; }

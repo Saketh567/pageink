@@ -104,7 +104,7 @@ export function parseBackup(text: string): Backup {
     if (url === null) throw notBackup()
     const cover = httpUrl(p.cover) || undefined
     return {
-      ...p, url, cover, title: p.title.slice(0, 500),
+      ...p, url, cover, title: p.title.slice(0, 500), offline: undefined, // saved files are not in a version 1 file
       siteOrigin: url ? new URL(url).origin : 'file:',
       captureMethod: METHODS.includes(p.captureMethod as string) ? p.captureMethod : 'file',
       tags: p.tags.filter(isStr).slice(0, 50).map((t) => t.slice(0, 100)),

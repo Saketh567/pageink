@@ -32,6 +32,8 @@ export interface Page {
   openedAt?: ISO
   /** Where you left off, in document pixels, and whether the margin lane was open. */
   view?: { scrollTop: number; margin?: boolean }
+  /** Whether the page's pictures, styles and fonts are saved with it (shown on cards; the details are on the snapshot). */
+  offline?: 'complete' | 'partial'
   createdAt: ISO
   updatedAt: ISO
 }

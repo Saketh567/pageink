@@ -89,6 +89,7 @@ export function PageSheet({ row, collections, onChanged, onClose }: PageSheetPro
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ',') && (e.preventDefault(), addTags())} />
       </div>
 
+      <p class="hint">Offline copy: {row.offline === 'complete' ? 'pictures, styles and fonts are saved with this page.' : row.offline === 'partial' ? 'partly saved. Open the page and use the download button to try again.' : row.url ? 'not saved yet. It is saved the next time you open the page.' : 'not applicable to a file.'}</p>
       <div class="row">
         <button class="btn" aria-pressed={pinned} onClick={() => { setPinned(!pinned); void save({ pinned: !pinned }) }}>
           <Icon name="star" />{pinned ? 'Pinned' : 'Pin to top'}

@@ -4,6 +4,7 @@
 import { useState } from 'preact/hooks'
 import type { Row } from '../store/organize.ts'
 import type { Collection } from '../store/schema.ts'
+import { archiveProgress } from '../archive/progress.ts'
 import { Icon } from './icons.tsx'
 
 /** Stable colour per site, so cards without a cover image still look distinct. */
@@ -15,6 +16,13 @@ function gradientFor(key: string): string {
 
 const host = (r: Row) => {
   try { return r.url ? new URL(r.url).hostname.replace(/^www\./, '') : r.siteOrigin === 'file:' ? 'Saved file' : r.siteOrigin } catch { return 'Saved page' } // a bad address must not break the whole library
+}
+
+/** Short status of the saved copy: counting while it saves, then "Offline" or "Partly offline". */
+function offlineLabel(row: Row): string {
+  const p = archiveProgress.value[row.id]
+  if (p) return `Saving ${p.saved}/${p.total}`
+  return row.offline === 'complete' ? 'Saved offline' : row.offline === 'partial' ? 'Partly offline' : ''
 }
 
 interface Props {
@@ -49,6 +57,7 @@ export function PageCard({ row, collection, onOpen, onMore, onPin }: Props) {
           {collection && <span class="collbadge"><i class="dotc" style={{ background: collection.color }} />{collection.name}</span>}
           <span>{new Date(touched).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
           <span>{row.notes} mark{row.notes === 1 ? '' : 's'}</span>
+          {offlineLabel(row) && <span class="offline">{offlineLabel(row)}</span>}
         </span>
       </button>
     </article>

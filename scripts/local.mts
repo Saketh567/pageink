@@ -19,6 +19,7 @@ const MIME: Record<string, string> = {
 const routes: Record<string, () => Promise<{ default: (req: never, res: never) => unknown }>> = {
   '/api/fetch': () => import('../api/fetch.ts'),
   '/api/render': () => import('../api/render.ts'),
+  '/api/asset': () => import('../api/asset.ts'),
   '/api/health': () => import('../api/health.ts'),
 }
 

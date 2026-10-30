@@ -89,3 +89,10 @@ Saved copies cannot run site scripts, so PageInk opens and closes hidden content
 - **Referrer-Policy is `no-referrer`.** It stops sites learning which page you were on, and many image hosts accept an empty referrer while rejecting a foreign one.
 - **`base-uri` still allows http(s).** The snapshot's `<base>` needs it (the snapshot inherits the app's policy). Accepted because injecting markup into the app document is already blocked by `script-src 'self'`.
 - **Not done, and why:** a shared rate limiter and a bot check (Upstash, Turnstile) need accounts only the owner can create; separate-origin snapshots are a larger redesign; `puppeteer-core` is not upgraded until it can be tested with a matching Chrome build. All three are listed in SECURITY.md.
+
+## Saved pages (version 2 foundation)
+
+- **Files are stored as raw bytes, not Blobs.** Pictures, styles and fonts go into the `blobs` store as an `ArrayBuffer` plus a type, keyed by the SHA-256 of the bytes (one copy however many pages use it). Safari has a history of trouble storing Blobs in IndexedDB; bytes are safe everywhere, and a `Blob` is built only when a page is shown.
+- **The stored page refers to a saved file by a `pk-asset:<hash>` token**, and keeps the original address in `data-pk-orig`. Tokens become short-lived `blob:` addresses in memory just before showing (`src/archive/resolve.ts`), so the stored page is never tied to a session.
+- **Saving is quiet and optional.** It runs in the background after import; if anything fails the page behaves exactly as before. One run per page at a time; requests are paced under the server's per-minute allowance; a busy answer (429) is waited out as long as the server asks.
+- **Lost updates:** saving a whole page record from an earlier copy can erase fields written in between (this happened to the saved-offline flag). Code now saves only the fields it changed (`patchPage`).

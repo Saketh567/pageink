@@ -114,7 +114,7 @@ M6 and M10 have no dependencies and can be done at any point if a milestone is b
    - `accept: image/avif,image/webp,image/*,text/css,font/*;q=0.9,*/*;q=0.1`,
    - a content-type allowlist: `image/(png|jpeg|gif|webp|avif|svg+xml|x-icon|vnd.microsoft.icon)`, `text/css`, `font/(woff2|woff|ttf|otf)`, `application/(font-woff|font-woff2|x-font-ttf|vnd.ms-fontobject|font-sfnt|octet-stream)` (octet-stream only when the address ends in a font extension); anything else is `NOT_ASSET`,
    - a 4 MB cap (reuse `MAX_BYTES`) and the same 10 s timeout.
-2. `api/_lib/limits.ts`: `assetLimiter` = 300 per minute per visitor and 3,000 per minute per instance (same pattern as `fetchLimiter`).
+2. `api/_lib/limits.ts`: `assetLimiter` = 600 per minute per visitor and 3,000 per minute per instance (same pattern as `fetchLimiter`).
 3. Create `api/asset.ts` modelled on `api/fetch.ts`: POST only, `checkAccess`, `assetLimiter`, `safeFetchAsset`; on success respond `200` with the bytes and headers `Content-Type: <allowed type>`, `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'none'; sandbox`, `Content-Disposition: attachment`, `X-Final-Url: <finalUrl>`. Errors use the same JSON shape and codes as `api/fetch.ts` plus `NOT_ASSET` (415). Never log the URL.
 4. `scripts/local.mts`: add `'/api/asset'` to `routes`, and let a handler send binary (the shim's `res.end(Buffer)` already works; make sure `json` is not forced).
 5. `vercel.json`: add `blob:` to `font-src` (fonts become blob URLs). No other CSP change.

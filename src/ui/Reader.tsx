@@ -7,8 +7,11 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { createEditor } from '../ink/editor.ts'
 import { sanitize, SANITIZER_VERSION } from '../import/sanitize.ts'
 import { importUrl, recapturePage } from '../import/import-url.ts'
-import { findPageByUrl, getPage, getSnapshot, getSetting, listAnnotations, patchPage, putSnapshot, savePage, setSetting } from '../store/repo.ts'
+import { findPageByUrl, getAsset, getPage, getSnapshot, getSetting, listAnnotations, patchPage, putSnapshot, setSetting } from '../store/repo.ts'
 import { attachLinkTaps, type LinkTap } from '../viewer/links.ts'
+import { archivePage } from '../archive/archiver.ts'
+import { archiveProgress } from '../archive/progress.ts'
+import { withAssetUrls } from '../archive/resolve.ts'
 import { attachSideScroll } from '../viewer/scrollers.ts'
 import { revealHidden } from '../viewer/widgets.ts'
 import { createViewer } from '../viewer/viewer.ts'
@@ -47,11 +50,13 @@ export function Reader({ pageId }: { pageId: string }) {
       let html = snap.html
       if (snap.sanitizerVersion < SANITIZER_VERSION) {
         html = sanitize(snap.html, page.url || undefined)
-        void putSnapshot({ pageId: page.id, html, sanitizerVersion: SANITIZER_VERSION })
+        void putSnapshot({ ...snap, html, sanitizerVersion: SANITIZER_VERSION })
       }
-      const viewer = await createViewer(host.current, html, page.layoutWidth)
-      if (cancelled) return viewer.destroy()
-      if (viewer.docHeight !== page.docHeight) await savePage({ ...page, docHeight: viewer.docHeight })
+      // saved pictures, styles and fonts are turned into short-lived addresses just for showing the page
+      const shown = await withAssetUrls(html, getAsset)
+      const viewer = await createViewer(host.current, shown.html, page.layoutWidth)
+      if (cancelled) { shown.revoke(); return viewer.destroy() }
+      if (viewer.docHeight !== page.docHeight) await patchPage(page.id, { docHeight: viewer.docHeight }) // only this field: saving the whole page could overwrite changes made meanwhile (like the saved-offline flag)
       // text that a site fades in with its own scripts would otherwise stay invisible in a saved copy
       const idoc = viewer.iframe.contentDocument
       if (idoc && revealHidden(idoc)) viewer.remeasure()
@@ -88,6 +93,8 @@ export function Reader({ pageId }: { pageId: string }) {
       addEventListener('pagehide', saveView)
 
       host.current.dataset.ready = '1'
+      // a page without a saved copy of its pictures and styles gets one now, quietly (partly saved pages wait for "Try again")
+      if (page.url && page.offline === undefined) void saveOffline(page.id)
       stop = () => {
         saveView()
         removeEventListener('pagehide', saveView)
@@ -97,6 +104,7 @@ export function Reader({ pageId }: { pageId: string }) {
         stopSide()
         editor.destroy()
         viewer.destroy()
+        shown.revoke()
         activeViewer.value = null
         currentPage.value = null
         panelOpen.value = false
@@ -114,6 +122,13 @@ export function Reader({ pageId }: { pageId: string }) {
       .catch((e) => setError(e instanceof Error ? e.message : 'Could not load the full page.'))
       .finally(() => { following.current = false; setBusy('') })
   }
+
+  /** Save this page's pictures, styles and fonts with it; the toolbar's "Try again" uses this too. */
+  async function saveOffline(id: string) {
+    const r = await archivePage(id, { appKey: appKey.value })
+    if (r !== 'skipped' && live.current === id && currentPage.value?.id === id) currentPage.value = { ...currentPage.value, offline: r }
+  }
+  actions.saveOffline = () => void saveOffline(pageId)
 
   /** Opens another page: the copy you already have, or a fresh import. A Back chip then leads back to where you came from. */
   async function followLink(href: string, fromId: string, layout: number) {
@@ -161,6 +176,7 @@ export function Reader({ pageId }: { pageId: string }) {
         </button>
       )}
       {notice.value && <p class="toast" role="status">{notice.value}</p>}
+      {archiveProgress.value[pageId] && <p class="savechip" role="status">Saving for offline… {archiveProgress.value[pageId].saved} of {archiveProgress.value[pageId].total}</p>}
       {missing && <p class="toast">This page is no longer in your library.</p>}
       {busy && <p class="toast" role="status">{busy}</p>}
       {error && <p class="toast error" role="alert" onClick={() => setError('')}>{error}</p>}
