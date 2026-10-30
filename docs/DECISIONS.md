@@ -57,3 +57,12 @@ One line each; full reasoning is in PLAN.md section 2.
 - **Remember where you were:** scroll position and lane state are saved per page (`Page.view`).
 - **Not built from the Phase 3 spec:** layer toggles and "clean read" (P3.15) and the first-run tour (P3.20). Highlights and notes are erased with the existing Eraser (undoable), and ink still saves as before.
 - Verified live in Chrome against Wikipedia (word, sentence and paragraph marks, a note, the panel, spotlight, margin lane) and by 18 browser tests; run on a real iPad is still outstanding.
+
+## Hosting lessons, backup and restore
+
+- **Vercel was connected to the wrong repository.** The project `pageink1` was watching a separate private repo `Saketh567/pageink1` (first commit "Initial commit"), so nothing pushed to `Saketh567/pageink` ever deployed. Fixed by reconnecting Settings, Git to `Saketh567/pageink`. Check which commit is live at any time: `https://pageink1.vercel.app/api/health` returns `{ok, keyConfigured, commit}`, and Settings shows "PageInk build <commit>".
+- **Visitors never need a Vercel login** on `pageink1.vercel.app` (public). Vercel Authentication ("Deployment Protection") locks the long branch and per-deployment addresses (`pageink1-git-main-...`, `...-git-phase-2-...`); set it to Disabled in Settings, Deployment Protection to make every address public. Share only the short address.
+- **Where data lives:** IndexedDB in the browser on one device and one web address (the localhost copy and the Vercel site have separate libraries). No accounts, no server copy. Safari can clear a site's data after a long idle spell unless the app is on the Home Screen (the app asks for persistent storage when installed).
+- **Backup and restore** (Settings, Your data): one `pageink-YYYY-MM-DD.pageink.json` with pages, page copies, marks and collections, handed to the share sheet (Save to Files, iCloud Drive, AirDrop) or downloaded. Restore **merges**: records that are missing or newer are added, nothing is deleted or replaced by older data. The file is untrusted input: it is validated whole (a bad file changes nothing) and every page copy is sanitized again. Known limit: pin and tag edits do not change a page's `updatedAt`, so they only come back onto a page that is missing. Settings are not part of the backup.
+- The library shows a back-up reminder once there is a page of your own and no backup in 7 days, and a "Continue where you left off" card for the last page opened.
+- Imported `.html` files are named after the page's own `<title>`, not the file name.

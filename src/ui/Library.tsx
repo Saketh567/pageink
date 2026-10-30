@@ -2,7 +2,8 @@ import { useEffect, useState } from 'preact/hooks'
 import { importFile } from '../import/file-import.ts'
 import { importUrl } from '../import/import-url.ts'
 import { applyFilters, SORTS, sortRows, tagCounts, type Row, type Sort } from '../store/organize.ts'
-import { countAnnotations, listCollections, listPages, patchPage } from '../store/repo.ts'
+import { saveBackup } from '../store/backup.ts'
+import { countAnnotations, getSetting, listCollections, listPages, patchPage } from '../store/repo.ts'
 import type { Collection, Page } from '../store/schema.ts'
 import { setPref } from './appearance.ts'
 import { Icon, Logo } from './icons.tsx'
@@ -26,11 +27,15 @@ export function Library() {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [dropOn, setDropOn] = useState('')
+  const [lastBackup, setLastBackup] = useState('')
+  const [resumeId, setResumeId] = useState('')
 
   const refresh = async () => {
     const [pages, c] = await Promise.all([listPages(), listCollections()])
     setRows(await Promise.all(pages.map(async (p) => ({ ...p, notes: await countAnnotations(p.id) }))))
     setCols(c)
+    setLastBackup((await getSetting<string>('lastBackup')) ?? '')
+    setResumeId((await getSetting<string>('lastPage')) ?? '')
     setLoaded(true)
   }
   useEffect(() => { void refresh() }, [])
@@ -71,6 +76,9 @@ export function Library() {
       else groups.push([r.siteOrigin, [r]])
     }
   }
+  const resume = rows.find((r) => r.id === resumeId)
+  // only nag once there is something of yours to lose (the bundled sample does not count)
+  const needsBackup = rows.some((r) => r.id !== 'sample') && (!lastBackup || Date.now() - Date.parse(lastBackup) > 7 * 864e5)
   const sheetRow = sheet?.k === 'page' ? rows.find((r) => r.id === sheet.id) : undefined
   const sheetColl = sheet?.k === 'coll' && sheet.id ? colById.get(sheet.id) : undefined
 
@@ -151,6 +159,22 @@ export function Library() {
         </form>
         {busy && <p class="hint status" role="status">{busy}</p>}
         {error && <p class="error status" role="alert">{error}</p>}
+
+        {resume && (
+          <button class="resume" onClick={() => go(`/p/${resume.id}`)}>
+            <span class="hint">Continue where you left off</span>
+            <strong>{resume.title}</strong>
+          </button>
+        )}
+        {needsBackup && (
+          <div class="nudge" role="status">
+            <div>
+              <strong>Back up your library</strong>
+              <p class="hint">Your pages and marks live only on this device. Save a backup file to iCloud Drive or Files so you can never lose them.</p>
+            </div>
+            <button class="btn primary" onClick={() => void saveBackup().then(refresh)}>Back up now</button>
+          </div>
+        )}
 
         <div class="heading">
           <h1>{title}</h1>

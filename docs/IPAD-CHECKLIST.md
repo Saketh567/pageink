@@ -20,6 +20,13 @@ Run on the Vercel preview URL (or production), in Safari first, then from the Ho
 - [ ] Toolbar can be dragged to the top, left, right and back; position is remembered.
 - [ ] "Draw with finger" (hand icon) lets a finger draw; Reading mode lets it scroll again.
 
+## Backup, restore and where you left off
+- [ ] Settings, Your data: "Back up everything" opens the iPad share sheet; save to Files or iCloud Drive. "Last backup" then says today.
+- [ ] Restore from backup picks that file and says how many pages and marks came back; nothing already there is lost.
+- [ ] The Library shows "Back up your library" when you have your own pages and no recent backup, and it disappears after backing up.
+- [ ] Open a page, go back: "Continue where you left off" shows that page.
+- [ ] Open the short address (pageink1.vercel.app) in a private window: no Vercel login appears.
+
 ## Phase 3: living marks
 - [ ] Import works with no key typed anywhere (Settings should only show an optional access key).
 - [ ] Mark text: drag the Pencil over words and the highlight snaps to whole words; no Safari text-selection popup or magnifier appears.

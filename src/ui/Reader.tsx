@@ -2,7 +2,7 @@ import { effect } from '@preact/signals'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { createEditor } from '../ink/editor.ts'
 import { importUrl } from '../import/import-url.ts'
-import { getPage, getSnapshot, listAnnotations, patchPage, savePage } from '../store/repo.ts'
+import { getPage, getSnapshot, listAnnotations, patchPage, savePage, setSetting } from '../store/repo.ts'
 import { attachLinkTaps, type LinkTap } from '../viewer/links.ts'
 import { createViewer } from '../viewer/viewer.ts'
 import { HeatStrip } from './HeatStrip.tsx'
@@ -34,6 +34,7 @@ export function Reader({ pageId }: { pageId: string }) {
       const editor = createEditor(viewer, page.id, annotations)
       attachLinkTaps(viewer, () => mode.value === 'read', setLink)
       void patchPage(page.id, { openedAt: new Date().toISOString() })
+      void setSetting('lastPage', page.id) // the library offers to continue here
       activeViewer.value = viewer
       currentPage.value = page
 
