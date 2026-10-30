@@ -1,0 +1,116 @@
+/* PageInk Atlas: "night desk, lit paper". Pages are bright sheets on a near-black desk; all controls are frosted glass. */
+
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 300 900; font-display: swap; src: url(/fonts/Fraunces.woff2) format('woff2'); }
+@font-face { font-family: 'Fraunces'; font-style: italic; font-weight: 300 900; font-display: swap; src: url(/fonts/Fraunces-Italic.woff2) format('woff2'); }
+@font-face { font-family: 'Geist'; font-weight: 300 700; font-display: swap; src: url(/fonts/Geist.woff2) format('woff2'); }
+@font-face { font-family: 'Geist Mono'; font-weight: 400; font-display: swap; src: url(/fonts/GeistMono.woff2) format('woff2'); }
+
+@property --hue { syntax: '<number>'; inherits: true; initial-value: 210; }
+
+.atlas {
+  --void: #07080c; --void-edge: #0e1018; --grid: #ffffff12; --grid-major: #ffffff22;
+  --sheet: #f3f0e9; --sheet-ink: #15161b; --sheet-muted: #6e6a62;
+  --glass: rgba(20, 22, 32, 0.62); --glass-line: #ffffff1f; --text: #ecedf2; --muted: #8b8fa3; --danger: #ff6b6b;
+  --accent: oklch(0.74 0.16 var(--hue)); --accent-ink: #07080c;
+  --e0: 0 1px 0 #0006, 0 10px 24px -14px #000c;
+  --e1: 0 18px 44px -18px #000e;
+  --e2: 0 42px 80px -26px #000f;
+  --e3: 0 12px 40px -12px #0009, inset 0 1px 0 #ffffff14;
+  --t-snap: 120ms cubic-bezier(0.2, 0.9, 0.3, 1);
+  --t-glide: 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  --t-peel: 180ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --fine: 1;
+  position: fixed; inset: 0; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+  background-color: var(--void); color: var(--text); font: 15px/22px 'Geist', system-ui, sans-serif;
+  background-image: radial-gradient(circle, var(--grid-major) 1.4px, transparent 2px), radial-gradient(circle, var(--grid) 1px, transparent 1.6px);
+  background-size: 192px 192px, 24px 24px;
+  animation: breathe 14s ease-in-out infinite alternate;
+}
+.atlas[data-world='day'] {
+  --void: #e8ebf1; --void-edge: #d9dee8; --grid: #0a0f2a17; --grid-major: #0a0f2a26;
+  --sheet: #ffffff; --sheet-muted: #6b7080; --glass: rgba(255, 255, 255, 0.68); --glass-line: #0a0f2a1a; --text: #0e1020; --muted: #596079;
+  --accent: oklch(0.58 0.19 var(--hue)); --accent-ink: #ffffff;
+  --e0: 0 1px 0 #1a214026, 0 10px 24px -14px #1a21404d; --e1: 0 18px 44px -18px #1a214066; --e2: 0 42px 80px -26px #1a214080;
+  --e3: 0 12px 40px -12px #1a214040, inset 0 1px 0 #ffffffcc;
+}
+@keyframes breathe { from { --hue: calc(var(--base-hue, 210) - 6); } to { --hue: calc(var(--base-hue, 210) + 6); } }
+@media (prefers-reduced-motion: reduce) { .atlas { animation: none; } }
+@supports not (color: oklch(0 0 0)) { .atlas { --accent: #3cc6ee; } .atlas[data-world='day'] { --accent: #0a83b8; } }
+
+.atlas::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, color-mix(in oklab, var(--void-edge), var(--accent) 6%) 100%); }
+
+.atlas .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; contain: layout style; }
+.atlas .world.hidden { visibility: hidden; }
+
+/* ---- cards ---- */
+.atlas .card { position: absolute; box-sizing: border-box; contain: layout paint style; cursor: grab; }
+.atlas .card.lifted { cursor: grabbing; }
+.atlas .card.page {
+  --h: 210; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: 14px; color: var(--sheet-ink);
+  background: var(--sheet);
+  box-shadow: var(--e0); transition: box-shadow var(--t-snap), transform var(--t-peel);
+}
+.atlas .card.page:hover { box-shadow: var(--e1); }
+.atlas .card.page.lifted { transform: scale(1.04) rotate(1deg); box-shadow: var(--e2); z-index: 99999 !important; }
+.atlas .card.page.settle { animation: settle 360ms linear(0, 0.4 8%, 0.86 20%, 1.04 34%, 1.01 48%, 1); }
+@keyframes settle { from { transform: translateY(-60px) scale(1.06); opacity: 0; } to { transform: none; opacity: 1; } }
+.atlas .band { height: 14px; flex: none; background: linear-gradient(135deg, hsl(var(--h) 70% 55%), hsl(calc(var(--h) + 40) 75% 45%)); }
+.atlas .cover { position: relative; flex: 1 1 auto; min-height: 0; display: grid; place-items: center; overflow: hidden; background: linear-gradient(135deg, hsl(var(--h) 55% 42%), hsl(calc(var(--h) + 48) 60% 30%)); }
+.atlas .cover .initial { font: 600 120px/1 'Fraunces', serif; color: #fff9; font-variation-settings: 'opsz' 144; }
+.atlas .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.atlas .title { margin: 0; padding: 20px 22px 6px; font: 600 26px/30px 'Fraunces', serif; font-variation-settings: 'opsz' 26; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; hyphens: auto; }
+.atlas .meta { margin: 0; padding: 0 22px 20px; display: flex; flex-wrap: wrap; gap: 4px 14px; font: 400 12px/16px 'Geist Mono', ui-monospace, monospace; color: var(--sheet-muted); }
+.atlas .meta .saved { color: hsl(var(--h) 60% 36%); }
+
+/* how much of a card shows depends on how big it is on screen (data-lod) */
+.atlas .card.page[data-lod='dot'] { border-radius: 22%; background: hsl(var(--h) 70% 58%); box-shadow: none; }
+.atlas .card.page[data-lod='dot'] > * { display: none; }
+.atlas .card.page[data-lod='title'] .cover, .atlas .card.page[data-lod='title'] .meta { display: none; }
+.atlas .card.page[data-lod='title'] .title { padding: 28px; font-size: 54px; line-height: 58px; -webkit-line-clamp: 5; }
+.atlas .card.page[data-lod='title'] .band { height: 40px; }
+
+/* ---- frames: a labelled region that holds posters ---- */
+.atlas .card.frame { border: 1.5px dashed color-mix(in oklab, var(--accent) 50%, transparent); border-radius: 28px; background: color-mix(in oklab, var(--accent) 5%, transparent); cursor: default; }
+.atlas .frame-label {
+  position: absolute; left: 28px; top: 22px; margin: 0; cursor: grab; touch-action: none;
+  font: 600 calc(clamp(15px, 30px * var(--z, 1), 30px) / var(--z, 1)) / 1.15 'Fraunces', serif; font-variation-settings: 'opsz' 30; letter-spacing: -0.01em; color: var(--text);
+}
+.atlas .frame-label small { font: 400 calc(clamp(11px, 13px * var(--z, 1), 13px) / var(--z, 1)) 'Geist Mono', monospace; color: var(--muted); margin-left: 0.8em; }
+
+/* ---- glass chrome ---- */
+.atlas [data-chrome] { position: absolute; z-index: 20; touch-action: manipulation; user-select: none; }
+.atlas .glass { background: var(--glass); backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%); border: 1px solid var(--glass-line); box-shadow: var(--e3); }
+.atlas .orb { left: calc(16px + env(safe-area-inset-left)); top: calc(16px + env(safe-area-inset-top)); display: flex; align-items: center; gap: 10px; padding: 0 20px 0 14px; height: 44px; border-radius: 999px; color: var(--text); font: 600 15px 'Geist', sans-serif; cursor: default; }
+.atlas .orb .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px 2px color-mix(in oklab, var(--accent) 60%, transparent); }
+.atlas .orb small { font: 400 12px 'Geist Mono', monospace; color: var(--muted); }
+.atlas .dock { left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; max-width: calc(100vw - 24px); }
+.atlas .dock form { display: flex; align-items: center; gap: 6px; }
+.atlas .dock input[type='text'], .atlas .dock input[type='url'] { width: min(46vw, 340px); height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #ffffff10; color: var(--text); font: 15px 'Geist', sans-serif; outline: none; }
+.atlas .dock input::placeholder { color: var(--muted); }
+.atlas .dock input:focus { background: #ffffff1c; box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 70%, transparent); }
+.atlas .dock button, .atlas .dock .btn { min-width: 44px; height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: var(--text); font: 600 14px 'Geist', sans-serif; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: background var(--t-snap), transform var(--t-snap); }
+.atlas .dock button:hover, .atlas .dock .btn:hover { background: #ffffff14; }
+.atlas .dock button:active { transform: scale(0.94); }
+.atlas .dock .go { background: var(--accent); color: var(--accent-ink); }
+.atlas .dock .go:hover { background: var(--accent); filter: brightness(1.08); }
+.atlas .dock svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.atlas .dock .sep { width: 1px; height: 24px; background: var(--glass-line); margin: 0 2px; }
+.atlas .busy { left: 50%; transform: translateX(-50%); bottom: calc(82px + env(safe-area-inset-bottom)); padding: 8px 16px; border-radius: 999px; font-size: 13px; }
+.atlas .busy.error { color: var(--danger); }
+.atlas .empty { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); text-align: center; color: var(--muted); max-width: 320px; pointer-events: none; }
+.atlas .empty h2 { margin: 0 0 8px; font: 500 30px/34px 'Fraunces', serif; color: var(--text); }
+
+/* ---- the dive: a page opened in place ---- */
+.atlas .dive { position: fixed; inset: 0; z-index: 30; background: var(--void); opacity: 0; animation: dive-in 240ms 140ms cubic-bezier(0.22, 1, 0.36, 1) forwards; touch-action: auto; user-select: auto; }
+@keyframes dive-in { to { opacity: 1; } }
+.atlas .rise { left: calc(16px + env(safe-area-inset-left)); top: calc(76px + env(safe-area-inset-top)); z-index: 40; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: var(--text); border: 1px solid var(--glass-line); cursor: pointer; }
+.atlas .rise svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+@media (max-width: 640px) {
+  .atlas .dock input[type='text'], .atlas .dock input[type='url'] { width: 38vw; padding: 0 12px; }
+  .atlas .dock .hide-s { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .atlas .dive { animation-duration: 140ms; animation-delay: 0ms; }
+  .atlas .card.page.settle { animation: none; }
+}

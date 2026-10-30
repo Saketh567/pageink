@@ -30,7 +30,7 @@ const archiveState = (page: Page) =>
 
 async function importShop(page: Page) {
   await page.setViewportSize({ width: 820, height: 1180 })
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.getByRole('textbox', { name: 'Web address' }).fill(PAGE_URL)
   await page.getByRole('button', { name: 'Import', exact: true }).click()
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
@@ -47,7 +47,7 @@ test('after saving, the page keeps its picture and styling with the network gone
   await page.route('**/api/**', (r) => void r.abort())
   await context.setOffline(true)
 
-  await page.evaluate(() => { location.hash = '#/' }) // back to the library, then open the page again from the device
+  await page.evaluate(() => { location.hash = '#/shelf' }) // back to the library, then open the page again from the device
   await expect(page.getByText('Saved offline')).toBeVisible()
   await page.getByRole('button', { name: 'Open Shoe shop' }).click()
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
@@ -65,6 +65,6 @@ test('if saving fails the page still opens and says it is only partly saved', as
   await expect(page.frameLocator('iframe.viewer-frame').getByRole('heading', { name: 'Air Runner' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Try saving this page for offline again' })).toBeVisible()
 
-  await page.evaluate(() => { location.hash = '#/' })
+  await page.evaluate(() => { location.hash = '#/shelf' })
   await expect(page.getByText('Partly offline')).toBeVisible()
 })

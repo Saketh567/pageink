@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 async function importPage(page: Page) {
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.locator('input[type=file]').setInputFiles({ name: 'backup-me.html', mimeType: 'text/html', buffer: Buffer.from(PAGE_HTML) })
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
 }
@@ -65,12 +65,13 @@ test('a file that is not a backup is refused and changes nothing', async ({ page
   await page.goto('/#/settings')
   await page.getByLabel('Backup file').setInputFiles({ name: 'notes.json', mimeType: 'application/json', buffer: Buffer.from('{"hello": "world"}') })
   await expect(page.getByRole('alert')).toContainText('not a PageInk backup')
-  await page.getByRole('button', { name: '‹ Library' }).click()
+  await page.getByRole('button', { name: /^‹ (Library|Desk)$/ }).click() // back goes to wherever you came from: here the desk
+  await page.evaluate(() => { location.hash = '#/shelf' })
   await expect(page.getByRole('button', { name: /^Open How a web page works/ })).toBeVisible()
 })
 
 test('the library reminds you to back up once you have your own pages, and the reminder clears after a backup', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await expect(page.getByText('Back up your library')).toHaveCount(0) // only the bundled sample: nothing to lose yet
 
   await importPage(page)
@@ -81,7 +82,7 @@ test('the library reminds you to back up once you have your own pages, and the r
 })
 
 test('the library offers to continue where you left off', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await expect(page.getByText('Continue where you left off')).toHaveCount(0)
   await page.getByRole('button', { name: /^Open How a web page works/ }).click()
   await expect(page.locator('.stage[data-ready]')).toBeAttached()

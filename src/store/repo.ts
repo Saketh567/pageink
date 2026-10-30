@@ -49,12 +49,16 @@ export async function getAsset(hash: string) {
 }
 export async function deletePage(id: ID) {
   const db = await getDb()
-  const tx = db.transaction(['pages', 'snapshots', 'annotations', 'texts', 'blobs'], 'readwrite')
+  const tx = db.transaction(['pages', 'snapshots', 'annotations', 'texts', 'blobs', 'cards', 'links'], 'readwrite')
   const snap = await tx.objectStore('snapshots').get(id)
   const keys = await tx.objectStore('annotations').index('pageId').getAllKeys(id)
   await tx.objectStore('pages').delete(id)
   await tx.objectStore('snapshots').delete(id)
   await tx.objectStore('texts').delete(id)
+  // its cards on every board go too, with the links that touched them
+  const gone = new Set(await tx.objectStore('cards').index('pageId').getAllKeys(id))
+  for (const cardId of gone) await tx.objectStore('cards').delete(cardId)
+  for (const l of await tx.objectStore('links').getAll()) if (gone.has(l.from) || gone.has(l.to)) await tx.objectStore('links').delete(l.id)
   for (const k of keys) await tx.objectStore('annotations').delete(k)
   // saved files go with the page, unless another page still uses them
   for (const hash of snap?.assets ?? []) {

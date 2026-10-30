@@ -4,7 +4,7 @@
 import { useState } from 'preact/hooks'
 import { MEANINGS } from '../export/study-sheet.ts'
 import { revealHidden } from '../viewer/widgets.ts'
-import { actions, activeViewer, currentPage, canRedo, canUndo, color, drawWithFinger, go, margin, marks, meaning, mode, notice, panelOpen, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
+import { actions, activeViewer, backTo, currentPage, canRedo, canUndo, color, drawWithFinger, go, margin, marks, meaning, mode, notice, panelOpen, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
 
 // Line icons (Lucide, ISC licence), 24x24, stroke only.
 const ICONS = {
@@ -70,7 +70,7 @@ export function ToolTray() {
     <div class={`tray edge-${trayEdge.value}`} role="toolbar" aria-label="Markup tools">
       <div class="grp">
         <button class="grip" aria-label="Move toolbar" onPointerDown={dragTray}>⋮⋮</button>
-        <button aria-label="Back to library" onClick={() => go('')}><Icon name="back" /></button>
+        <button aria-label="Back to library" onClick={() => go(backTo.value)}><Icon name="back" /></button>
         <button
           class="modeswitch"
           aria-label={markup ? 'Markup mode, tap for reading mode' : 'Reading mode, tap for markup mode'}

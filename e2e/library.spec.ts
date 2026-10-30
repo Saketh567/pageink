@@ -18,7 +18,7 @@ const address = (page: Page) => page.getByLabel('Web address')
 const importBtn = (page: Page) => page.getByRole('button', { name: 'Import', exact: true })
 
 test('library shows the sample and opens it', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await expect(page.getByText('How a web page works (sample)').first()).toBeVisible()
   await page.getByRole('button', { name: /^Open How a web page works/ }).click()
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
@@ -29,7 +29,7 @@ test('library shows the sample and opens it', async ({ page }) => {
 test('import by URL uses fetch for a content page and shows it as a card', async ({ page }) => {
   const calls: string[] = []
   await mockApi(page, { calls })
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await address(page).fill('mock.example/article')
   await importBtn(page).click()
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
@@ -42,7 +42,7 @@ test('import by URL uses fetch for a content page and shows it as a card', async
 test('an empty app shell automatically falls back to render', async ({ page }) => {
   const calls: string[] = []
   await mockApi(page, { fetch: SHELL, render: ARTICLE, calls })
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await address(page).fill('https://mock.example/app')
   await importBtn(page).click()
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
@@ -51,14 +51,14 @@ test('an empty app shell automatically falls back to render', async ({ page }) =
 
 test('a refused request shows a friendly error', async ({ page }) => {
   await page.route('**/api/fetch', (r) => r.fulfill({ status: 401, json: { error: 'UNAUTHORIZED', message: 'Key rejected' } }))
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await address(page).fill('https://mock.example/')
   await importBtn(page).click()
   await expect(page.getByRole('alert')).toContainText('did not accept')
 })
 
 test('importing a saved .html file works and never executes its script', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/shelf')
   const html = '<!doctype html><title>Saved</title><h1>Saved page</h1><script>window.__pwned = 1</script><img src=x onerror="window.__pwned = 2">'
   await page.locator('input[type=file]').setInputFiles({ name: 'saved.html', mimeType: 'text/html', buffer: Buffer.from(html) })
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
@@ -69,7 +69,7 @@ test('importing a saved .html file works and never executes its script', async (
 })
 
 async function importedHeight(page: Page, html: string) {
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.locator('input[type=file]').setInputFiles({ name: 'p.html', mimeType: 'text/html', buffer: Buffer.from(html) })
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
   return Number(await page.locator('svg.viewer-ink').getAttribute('height'))
@@ -90,7 +90,7 @@ test('a short page is not stretched to the measuring window', async ({ page }) =
 })
 
 test('rename and delete from the page options sheet', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.getByRole('button', { name: /Options for How a web page works/ }).click()
   await page.getByLabel('Title').fill('Renamed sample')
   await page.getByLabel('Title').blur()

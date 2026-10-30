@@ -96,3 +96,55 @@ export interface Annotation {
   /** The layout width the ink was drawn at; if the layout changes, ink is moved with the content it was drawn on. */
   layoutAt?: number
 }
+
+// ---- Atlas: boards of cards (a spatial desk) ----
+
+/** Where the camera is on a board: (x, y) is the board point at the screen's top-left, z the zoom (1 = true size). */
+export interface Camera { x: number; y: number; z: number }
+
+export interface Board {
+  id: ID
+  name: string
+  /** 0 to 360: the board's accent colour. */
+  hue: number
+  /** Position in the list of boards. */
+  order: number
+  /** Where you left the camera. */
+  camera?: Camera
+  createdAt: ISO
+  updatedAt: ISO
+}
+
+export type CardKind = 'page' | 'quote' | 'note' | 'ink' | 'frame'
+
+/** Anything lying on a board. Position and size are in board units: 1 unit is 1 CSS px at zoom 1, y grows downwards. */
+export interface Card {
+  id: ID
+  boardId: ID
+  kind: CardKind
+  x: number
+  y: number
+  w: number
+  h: number
+  /** Stacking order; frames always sit below everything else. */
+  z: number
+  /** 'page' cards (and later 'quote' cards): the saved page this card shows. Cards point at pages, they never copy them. */
+  pageId?: ID
+  /** 'frame' label, 'note' text. */
+  text?: string
+  /** A frame's colour (from its collection). */
+  color?: string
+  createdAt: ISO
+  updatedAt: ISO
+}
+
+export interface Link {
+  id: ID
+  boardId: ID
+  from: ID
+  to: ID
+  kind: 'thread' | 'source' | 'trail'
+  label?: string
+  createdAt: ISO
+  updatedAt: ISO
+}

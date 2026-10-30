@@ -6,6 +6,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { dataVersion, runBackgroundMigrations, runMigrations } from '../store/migrate.ts'
 import { seedSample, setSetting } from '../store/repo.ts'
 import { loadAppearance, startAppearance } from './appearance.ts'
+import { Atlas } from '../atlas/Atlas.tsx'
 import { Library } from './Library.tsx'
 import { Reader } from './Reader.tsx'
 import { loadSettings, Settings } from './Settings.tsx'
@@ -37,7 +38,8 @@ export function App() {
   if (!ready) return null
 
   const r = route.value
-  const screen = r.startsWith('/p/') ? <Reader key={r} pageId={r.slice(3)} /> : r === '/settings' ? <Settings /> : <Library />
+  // the desk is home; a page link opens the plain reader; the old grid of cards lives on at #/shelf
+  const screen = r.startsWith('/p/') ? <Reader key={r} pageId={r.slice(3)} /> : r === '/settings' ? <Settings /> : r === '/shelf' ? <Library /> : <Atlas />
   return (
     <>
       {screen}

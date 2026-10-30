@@ -3,7 +3,7 @@
  * Upgrades must never delete user data.
  */
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { Annotation, Collection, Page, PageText, Snapshot } from './schema.ts'
+import type { Annotation, Board, Card, Collection, Link, Page, PageText, Snapshot } from './schema.ts'
 
 interface PageInkDB extends DBSchema {
   pages: { key: string; value: Page; indexes: { siteOrigin: string; updatedAt: string } }
@@ -14,6 +14,9 @@ interface PageInkDB extends DBSchema {
   settings: { key: string; value: { key: string; value: unknown } }
   collections: { key: string; value: Collection }
   texts: { key: string; value: PageText }
+  boards: { key: string; value: Board; indexes: { order: number } }
+  cards: { key: string; value: Card; indexes: { boardId: string; pageId: string } }
+  links: { key: string; value: Link; indexes: { boardId: string; from: string; to: string } }
 }
 
 export type Db = IDBPDatabase<PageInkDB>
@@ -22,7 +25,7 @@ let dbPromise: Promise<Db> | undefined
 
 /** Schema migrations go in the version switch below; never delete user data in a migration. */
 export function getDb(name = 'pageink'): Promise<Db> {
-  dbPromise ??= openDB<PageInkDB>(name, 3, {
+  dbPromise ??= openDB<PageInkDB>(name, 4, {
     upgrade(db, oldVersion, _newVersion, tx) {
       if (oldVersion < 1) {
         const pages = db.createObjectStore('pages', { keyPath: 'id' })
@@ -38,6 +41,17 @@ export function getDb(name = 'pageink'): Promise<Db> {
         // purely additive: which saved assets a page uses (looked up the other way round when cleaning up), and the text of each page
         tx.objectStore('snapshots').createIndex('assets', 'assets', { multiEntry: true })
         db.createObjectStore('texts', { keyPath: 'pageId' })
+      }
+      if (oldVersion < 4) {
+        // the Atlas: boards, the cards lying on them, and the links between cards (purely additive)
+        db.createObjectStore('boards', { keyPath: 'id' }).createIndex('order', 'order')
+        const cards = db.createObjectStore('cards', { keyPath: 'id' })
+        cards.createIndex('boardId', 'boardId')
+        cards.createIndex('pageId', 'pageId')
+        const links = db.createObjectStore('links', { keyPath: 'id' })
+        links.createIndex('boardId', 'boardId')
+        links.createIndex('from', 'from')
+        links.createIndex('to', 'to')
       }
     },
   })

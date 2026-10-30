@@ -38,6 +38,8 @@ export const defaultWidth = signal<Width>(0)
 export const route = signal(location.hash.replace(/^#/, ''))
 addEventListener('hashchange', () => (route.value = location.hash.replace(/^#/, '')))
 export const go = (path: string) => { location.hash = path }
+/** Where the Back buttons lead: the screen you came from (the desk, or the classic shelf). */
+export const backTo = signal('')
 
 export type Theme = 'auto' | 'dark' | 'light' | 'paper'
 export type Density = 'comfortable' | 'compact'

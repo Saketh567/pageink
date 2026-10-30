@@ -6,7 +6,7 @@ import { archiveAll } from '../archive/archiver.ts'
 import { MAX_BACKUP_BYTES, parseBackup, restoreBackup, saveBackup } from '../store/backup.ts'
 import { getSetting } from '../store/repo.ts'
 import { setPref } from './appearance.ts'
-import { accent, ACCENTS, appKey, defaultWidth, density, drawWithFinger, go, libraryFormat, sort, theme, view, WIDTHS, type Density, type Theme, type Width } from './state.ts'
+import { accent, ACCENTS, appKey, defaultWidth, density, backTo, drawWithFinger, go, libraryFormat, sort, theme, view, WIDTHS, type Density, type Theme, type Width } from './state.ts'
 import { SORTS, type Sort } from '../store/organize.ts'
 
 export async function loadSettings() {
@@ -98,7 +98,7 @@ export function Settings() {
   return (
     <div class="screen">
       <header class="bar">
-        <button class="btn" onClick={() => go('')}>‹ Library</button>
+        <button class="btn" onClick={() => go(backTo.value)}>‹ {backTo.value === '/shelf' ? 'Library' : 'Desk'}</button>
         <h1>Settings</h1>
       </header>
 

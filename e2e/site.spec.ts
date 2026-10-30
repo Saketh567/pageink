@@ -10,7 +10,7 @@ const FAQ = `<!doctype html><title>FAQ page</title><body style="margin:0;font:18
 
 async function openFaq(page: Page) {
   await page.setViewportSize({ width: 820, height: 1180 })
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.locator('input[type=file]').setInputFiles({ name: 'faq.html', mimeType: 'text/html', buffer: Buffer.from(FAQ) })
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
 }
@@ -76,7 +76,7 @@ test('marks stay on each page of a site while you move between its pages', async
     await expect(page.locator('svg.viewer-ink g[data-layer=highlights] > g')).toHaveCount(1)
   }
 
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.getByRole('textbox', { name: 'Web address' }).fill(`${SITE}/a`)
   await page.getByRole('button', { name: 'Import', exact: true }).click()
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
@@ -133,7 +133,7 @@ test('pictures that a site loads with its own script still appear', async ({ pag
     <div id="c" class="bg" data-bg="https://img.example/c.png"></div>
     <div style="opacity:0"><img id="d" src="https://img.example/d.png" width="100" height="100"></div></body>`
   await page.setViewportSize({ width: 820, height: 1180 })
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.locator('input[type=file]').setInputFiles({ name: 'lazy.html', mimeType: 'text/html', buffer: Buffer.from(html) })
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
   const f = frame(page)
@@ -150,7 +150,7 @@ test('marks on a carousel slide go with it when the carousel scrolls sideways', 
     <div id="rail" style="display:flex;width:400px;overflow-x:auto;scrollbar-width:none">${slide('one', 'First shoe: the classic leather runner in white.')}${slide('two', 'Second shoe: the lightweight trail model in green.')}</div>
     ${'<p style="margin:0 0 12px">Filler paragraph so the page is long enough to scroll properly.</p>'.repeat(20)}</body>`
   await page.setViewportSize({ width: 820, height: 1180 })
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.locator('input[type=file]').setInputFiles({ name: 'rail.html', mimeType: 'text/html', buffer: Buffer.from(html) })
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
   await page.getByRole('button', { name: 'Mark text' }).click()
@@ -179,7 +179,7 @@ test('"Reload with full rendering" fills in the page and keeps the marks', async
   await page.route('**/api/fetch', (route) => { calls.push('fetch'); void route.fulfill({ json: { html: thin, finalUrl: 'https://shop.example/list', status: 200 } }) })
   await page.route('**/api/render', (route) => { calls.push('render'); void route.fulfill({ json: { html: full, finalUrl: 'https://shop.example/list', status: 200 } }) })
   await page.setViewportSize({ width: 820, height: 1180 })
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.getByRole('textbox', { name: 'Web address' }).fill('https://shop.example/list')
   await page.getByRole('button', { name: 'Import', exact: true }).click()
   await expect(page.locator('.stage[data-ready]')).toBeAttached()

@@ -14,7 +14,7 @@ async function seed(page: Page) {
     const html = `<!doctype html><title>${PAGES[host]}</title><h1>${PAGES[host]}</h1>${'<p>Readable text so this counts as a content page. </p>'.repeat(12)}`
     r.fulfill({ json: { html, finalUrl: `https://${host}/`, status: 200 } })
   })
-  await page.goto('/') // no key needed: importing works from the app itself
+  await page.goto('/#/shelf') // no key needed: importing works from the app itself
   for (const host of Object.keys(PAGES)) {
     await page.getByLabel('Web address').fill(`https://${host}/`)
     await page.getByRole('button', { name: 'Import', exact: true }).click()
@@ -83,7 +83,7 @@ test('pinned pages come first and the sort order changes the list', async ({ pag
 })
 
 test('layout, sort, theme and accent persist across a reload', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.getByRole('button', { name: 'List view' }).click()
   await page.getByLabel('Sort').selectOption('name')
   await page.getByRole('button', { name: 'Settings' }).click()
@@ -100,7 +100,8 @@ test('layout, sort, theme and accent persist across a reload', async ({ page }) 
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   expect(await page.evaluate(() => document.documentElement.style.getPropertyValue('--accent'))).toBe('#ff2d55')
-  await page.getByRole('button', { name: '‹ Library' }).click()
+  await page.getByRole('button', { name: /^‹ (Library|Desk)$/ }).click() // back goes to wherever you came from: here the desk
+  await page.evaluate(() => { location.hash = '#/shelf' })
   await expect(page.locator('.list')).toBeVisible()
   await expect(page.getByLabel('Sort')).toHaveValue('name')
 })

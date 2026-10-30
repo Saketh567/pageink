@@ -34,7 +34,7 @@ test('the page really re-flows: a narrower layout makes it taller', async ({ pag
   const text = 'A paragraph that is long enough to wrap onto several lines when the screen is narrow. '.repeat(6)
   const body = Array.from({ length: 12 }, () => `<p style="margin:0 0 16px;font:18px/1.5 Georgia">${text}</p>`).join('')
   await page.setViewportSize(IPAD_LANDSCAPE)
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.locator('input[type=file]').setInputFiles({ name: 'flow.html', mimeType: 'text/html', buffer: Buffer.from(`<!doctype html><title>Flow</title><body style="margin:0">${body}</body>`) })
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
   const height = async () => Number(await page.locator('svg.viewer-ink').getAttribute('height'))
@@ -98,7 +98,7 @@ test('images load as you get near them, not all at once', async ({ page }) => {
   })
   const imgs = Array.from({ length: 40 }, (_, i) => `<p>Section ${i}</p><img src="/lazy/${i}.png" width="600" height="500" alt="">`).join('')
   await page.setViewportSize(IPAD_PORTRAIT)
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.locator('input[type=file]').setInputFiles({ name: 'long.html', mimeType: 'text/html', buffer: Buffer.from(`<!doctype html><title>Long</title><body>${imgs}</body>`) })
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
   const has = (n: number) => [...requested].some((u) => u.endsWith(`/lazy/${n}.png`))
@@ -113,7 +113,7 @@ test('images load as you get near them, not all at once', async ({ page }) => {
 
 test('each page can be switched from Auto to a fixed width', async ({ page }) => {
   await page.setViewportSize(IPAD_LANDSCAPE)
-  await page.goto('/')
+  await page.goto('/#/shelf')
   await page.getByRole('button', { name: /Options for How a web page works/ }).click()
   await page.getByRole('dialog', { name: 'Page options' }).getByLabel('Layout').selectOption('390')
   await page.getByRole('button', { name: 'Done' }).click()

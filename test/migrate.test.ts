@@ -37,20 +37,24 @@ describe('upgrading a version 1 library', () => {
   test('quick upgrades run first and leave every record in place', async () => {
     await runMigrations()
     const db = await getDb()
-    expect(db.version).toBe(3)
+    expect(db.version).toBe(4)
     expect(await db.count('pages')).toBe(2)
     expect((await db.get('pages', 'a'))?.layoutWidth).toBe(0) // fixed 1280 became Auto
     expect((await db.get('pages', 'b'))?.layoutWidth).toBe(820) // other widths stay
     expect((await listAnnotations('a')).find((x) => x.id === 'i1')?.layoutAt).toBe(1280)
     expect(await getSetting('defaultWidth')).toBe(0)
-    expect(await dataVersion()).toBe(2)
+    expect(await dataVersion()).toBe(2) // 3 (page text) is still to come, so the unbroken run stops at 2
     expect(await db.count('texts')).toBe(0) // the slow step has not run yet
+    expect((await db.get('boards', 'home'))?.name).toBe('Home') // the quick step that builds the desk has run
+    const cards = await db.getAllFromIndex('cards', 'boardId', 'home')
+    expect(cards.filter((c) => c.kind === 'page').map((c) => c.pageId).sort()).toEqual(['a', 'b']) // every page has a poster
+    expect(cards.filter((c) => c.kind === 'frame')).toHaveLength(1) // in a frame for loose pages
   })
 
   test('the slow step then fills in the text of every page', async () => {
     await runBackgroundMigrations()
     const db = await getDb()
-    expect(await dataVersion()).toBe(3)
+    expect(await dataVersion()).toBe(4)
     expect(await db.get('texts', 'a')).toEqual({ pageId: 'a', title: 'Title a', text: 'Alpha heading First paragraph.' })
     expect((await db.get('texts', 'b'))?.text).toBe('Bravo text')
   })
@@ -61,13 +65,29 @@ describe('upgrading a version 1 library', () => {
     await runMigrations()
     await runBackgroundMigrations()
     expect(JSON.stringify([await db.getAll('pages'), await db.getAll('texts'), await db.getAll('annotations')])).toBe(before)
-    expect(await dataVersion()).toBe(3)
+    expect(await dataVersion()).toBe(4)
   })
 
   test('the index on saved assets exists and is empty for old pages', async () => {
     const db = await getDb()
     expect(Array.from(db.transaction('snapshots').store.indexNames)).toContain('assets')
     expect(await db.getAllFromIndex('snapshots', 'assets', 'a'.repeat(64))).toEqual([])
+  })
+})
+
+describe('the desk', () => {
+  test('a card you moved is never moved back by running the steps again, and a deleted page loses its card', async () => {
+    const db = await getDb()
+    const card = (await db.getAllFromIndex('cards', 'boardId', 'home')).find((c) => c.pageId === 'a')!
+    await db.put('cards', { ...card, x: 9999, y: 8888 })
+    await db.delete('settings', 'migrated:4')
+    await db.put('settings', { key: 'dataVersion', value: 3 })
+    await db.delete('settings', 'migrated:4')
+    await runMigrations()
+    const again = (await db.getAllFromIndex('cards', 'boardId', 'home')).find((c) => c.pageId === 'a')!
+    expect([again.x, again.y]).toEqual([9999, 8888])
+    await deletePage('a')
+    expect((await db.getAllFromIndex('cards', 'boardId', 'home')).some((c) => c.pageId === 'a')).toBe(false)
   })
 })
 
