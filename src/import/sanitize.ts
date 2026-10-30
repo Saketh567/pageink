@@ -1,11 +1,13 @@
 import DOMPurify from 'dompurify'
 
-export const SANITIZER_VERSION = 1
+export const SANITIZER_VERSION = 2
 
 const LAZY: Array<[string, string]> = [['data-src', 'src'], ['data-lazy-src', 'src'], ['data-srcset', 'srcset']]
 const FORBID_TAGS = ['script', 'iframe', 'frame', 'frameset', 'object', 'embed', 'form', 'base', 'portal', 'applet']
 const FORBID_ATTR = ['srcdoc', 'ping', 'formaction']
 const PAGE_CSP = "script-src 'none'; object-src 'none'; form-action 'none'"
+/** A 1x1 transparent image: stands in for an image until it is near the screen, so there is no broken-image icon or alt text. */
+const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
 const FREEZE_CSS = 'html,body{overflow:hidden!important}'
 
 const parse = (html: string) => new DOMParser().parseFromString(html, 'text/html')
@@ -57,6 +59,19 @@ export function sanitize(raw: string, baseUrl?: string): string {
     })
   }
   doc.querySelectorAll('[loading]').forEach((el) => el.removeAttribute('loading'))
+  // Park every image's address. The page is shown at full height, so the browser would fetch all of its images at
+  // once (hundreds on a big site); the viewer restores each one when it is near the screen.
+  doc.querySelectorAll('source[srcset]').forEach((src) => {
+    src.setAttribute('data-pk-srcset', src.getAttribute('srcset')!)
+    src.removeAttribute('srcset')
+  })
+  doc.querySelectorAll('img').forEach((img) => {
+    const src = img.getAttribute('src')
+    const set = img.getAttribute('srcset')
+    if (set) { img.setAttribute('data-pk-srcset', set); img.removeAttribute('srcset') }
+    if (src && !src.startsWith('data:')) { img.setAttribute('data-pk-src', src); img.setAttribute('src', BLANK) }
+    else if (!src && set) img.setAttribute('src', BLANK)
+  })
 
   const head = doc.head
   const csp = doc.createElement('meta')

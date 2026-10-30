@@ -4,7 +4,7 @@ import { normalizeTags, type Row } from '../store/organize.ts'
 import { deleteCollection, deletePage, patchPage, putCollection } from '../store/repo.ts'
 import type { Collection } from '../store/schema.ts'
 import { Icon } from './icons.tsx'
-import { ACCENTS } from './state.ts'
+import { ACCENTS, WIDTHS } from './state.ts'
 
 export function Sheet({ title, onClose, children }: { title: string; onClose(): void; children: ComponentChildren }) {
   return (
@@ -26,6 +26,7 @@ export function PageSheet({ row, collections, onChanged, onClose }: PageSheetPro
   const [draft, setDraft] = useState('')
   const [collectionId, setCollectionId] = useState(row.collectionId)
   const [pinned, setPinned] = useState(!!row.pinned)
+  const [layout, setLayout] = useState(row.layoutWidth)
 
   const save = async (patch: Parameters<typeof patchPage>[1]) => {
     await patchPage(row.id, patch)
@@ -53,6 +54,14 @@ export function PageSheet({ row, collections, onChanged, onClose }: PageSheetPro
         <label class="lbl" for="ptitle">Title</label>
         <input id="ptitle" class="field" value={title} onInput={(e) => setTitle((e.target as HTMLInputElement).value)} onBlur={commitTitle} onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
         {row.url && <p class="url">{row.url}</p>}
+      </div>
+
+      <div>
+        <label class="lbl" for="playout">Layout</label>
+        <select id="playout" class="field" value={layout} onChange={(e) => { const v = Number((e.target as HTMLSelectElement).value); setLayout(v); void save({ layoutWidth: v }) }}>
+          {WIDTHS.map(([w, label]) => <option key={w} value={w}>{label}</option>)}
+        </select>
+        <p class="hint" style={{ marginTop: '6px' }}>Auto lays the page out for your screen, like the original site. Fixed widths are shrunk or stretched to fit.</p>
       </div>
 
       <div>

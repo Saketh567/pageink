@@ -1,8 +1,9 @@
 import { effect } from '@preact/signals'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { createEditor } from '../ink/editor.ts'
+import { sanitize, SANITIZER_VERSION } from '../import/sanitize.ts'
 import { importUrl } from '../import/import-url.ts'
-import { getPage, getSnapshot, listAnnotations, patchPage, savePage, setSetting } from '../store/repo.ts'
+import { getPage, getSnapshot, listAnnotations, patchPage, putSnapshot, savePage, setSetting } from '../store/repo.ts'
 import { attachLinkTaps, type LinkTap } from '../viewer/links.ts'
 import { createViewer } from '../viewer/viewer.ts'
 import { HeatStrip } from './HeatStrip.tsx'
@@ -28,7 +29,13 @@ export function Reader({ pageId }: { pageId: string }) {
       if (cancelled) return
       if (!page || !snap || !host.current) return setMissing(true)
       setWidth(page.layoutWidth)
-      const viewer = await createViewer(host.current, snap.html, page.layoutWidth)
+      // pages saved by an older version are cleaned again once, so they get the newer image handling too
+      let html = snap.html
+      if (snap.sanitizerVersion < SANITIZER_VERSION) {
+        html = sanitize(snap.html, page.url || undefined)
+        void putSnapshot({ pageId: page.id, html, sanitizerVersion: SANITIZER_VERSION })
+      }
+      const viewer = await createViewer(host.current, html, page.layoutWidth)
       if (cancelled) return viewer.destroy()
       if (viewer.docHeight !== page.docHeight) await savePage({ ...page, docHeight: viewer.docHeight })
       const editor = createEditor(viewer, page.id, annotations)

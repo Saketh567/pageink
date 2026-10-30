@@ -70,13 +70,28 @@ describe('sanitize: content handling', () => {
     expect(out.startsWith('<!doctype html>')).toBe(true)
   })
 
-  test('promotes lazy images and drops loading=lazy', () => {
-    const out = sanitize('<body><img data-src="/a.png" loading="lazy"><img data-lazy-src="/b.png"><picture><source data-srcset="/c.png 1x"></picture></body>', BASE)
+  test('lazy attributes are promoted, loading=lazy dropped, and every image address is parked for the viewer', () => {
+    const out = sanitize('<body><img data-src="/a.png" loading="lazy"><img data-lazy-src="/b.png"><picture><source data-srcset="/c.png 1x"><img src="/d.png" srcset="/d2.png 2x"></picture></body>', BASE)
     const doc = new DOMParser().parseFromString(out, 'text/html')
-    expect(doc.querySelectorAll('img')[0].getAttribute('src')).toBe('/a.png')
-    expect(doc.querySelectorAll('img')[1].getAttribute('src')).toBe('/b.png')
-    expect(doc.querySelector('source')!.getAttribute('srcset')).toBe('/c.png 1x')
+    const imgs = doc.querySelectorAll('img')
+    expect(imgs[0].getAttribute('data-pk-src')).toBe('/a.png')
+    expect(imgs[1].getAttribute('data-pk-src')).toBe('/b.png')
+    expect(doc.querySelector('source')!.getAttribute('data-pk-srcset')).toBe('/c.png 1x')
+    expect(imgs[2].getAttribute('data-pk-src')).toBe('/d.png')
+    expect(imgs[2].getAttribute('data-pk-srcset')).toBe('/d2.png 2x')
     expect(doc.querySelector('[loading]')).toBeNull()
+    for (const img of imgs) {
+      expect(img.getAttribute('src')).toMatch(/^data:image\/gif/) // nothing is fetched until the viewer wakes it
+      expect(img.hasAttribute('srcset')).toBe(false)
+    }
+    expect(doc.querySelector('source')!.hasAttribute('srcset')).toBe(false)
+  })
+
+  test('inline data: images are left alone', () => {
+    const out = sanitize('<body><img src="data:image/png;base64,iVBORw0KGgo="></body>', BASE)
+    const img = new DOMParser().parseFromString(out, 'text/html').querySelector('img')!
+    expect(img.getAttribute('src')).toBe('data:image/png;base64,iVBORw0KGgo=')
+    expect(img.hasAttribute('data-pk-src')).toBe(false)
   })
 
   test('unwraps noscript fallbacks', () => {

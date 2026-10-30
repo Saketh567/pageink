@@ -11,6 +11,7 @@ export interface Page {
   title: string
   captureMethod: 'fetch' | 'render' | 'file' | 'bookmarklet' | 'pdf'
   capturedAt: ISO
+  /** 0 = Auto: laid out at the width of the screen, like the original site; otherwise a fixed width. */
   layoutWidth: number
   docHeight: number
   textHash: string
@@ -74,5 +75,7 @@ export interface Annotation {
   note?: { text: string }
   /** Margin ink: points at the element it belongs to, so a leader line can be drawn. */
   lane?: 'margin'
-  leader?: { css: string }
+  leader?: { css: string; top?: number }
+  /** The layout width the ink was drawn at; if the layout changes, ink is moved with the content it was drawn on. */
+  layoutAt?: number
 }

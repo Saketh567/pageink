@@ -7,7 +7,7 @@ import { SORTS, type Sort } from '../store/organize.ts'
 
 export async function loadSettings() {
   appKey.value = (await getSetting<string>('appKey')) ?? ''
-  defaultWidth.value = (await getSetting<Width>('defaultWidth')) ?? 1280
+  defaultWidth.value = (await getSetting<Width>('defaultWidth')) ?? 0
   drawWithFinger.value = (await getSetting<boolean>('drawWithFinger')) ?? false
 }
 

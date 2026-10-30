@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks'
-import { seedSample, setSetting } from '../store/repo.ts'
+import { migrateToAutoLayout, seedSample, setSetting } from '../store/repo.ts'
 import { loadAppearance, startAppearance } from './appearance.ts'
 import { Library } from './Library.tsx'
 import { Reader } from './Reader.tsx'
@@ -17,6 +17,7 @@ export function App() {
   useEffect(() => {
     void (async () => {
       await seedSample(() => fetch('/sample/sample-page.html').then((r) => r.text()))
+      await migrateToAutoLayout()
       await Promise.all([loadSettings(), loadAppearance()])
       startAppearance()
       setReady(true)

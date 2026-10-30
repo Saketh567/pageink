@@ -1,5 +1,5 @@
 import { resolveAnnotation, type Resolved } from '../anchor/anchor.ts'
-import { resolve as resolveCss } from '../anchor/css-selector.ts'
+import { elementPoint, resolve as resolveCss } from '../anchor/css-selector.ts'
 import type { Mark } from '../export/study-sheet.ts'
 import type { Annotation, Rect } from '../store/schema.ts'
 import { hitsInk } from './eraser.ts'
@@ -7,11 +7,13 @@ import { absPoints, outlinePath } from './stroke.ts'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const PIN_R = 12
+/** Ink drawn before layouts could change was always drawn at the old fixed desktop width. */
+const LEGACY_WIDTH = 1280
 
 const isAnchored = (a: Annotation) => a.kind === 'highlight' || a.kind === 'note'
 
 /** Committed annotations as SVG, plus the in-memory list they were drawn from and where each one currently is. */
-export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => void) {
+export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => void, getWidth: () => number = () => LEGACY_WIDTH) {
   const items = new Map<string, Annotation>()
   const nodes = new Map<string, SVGElement>()
   const resolved = new Map<string, Resolved>()
@@ -36,6 +38,25 @@ export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => 
       if (spot) svg.append(spot) // the spotlight dimmer always stays on top
     }
     return g
+  }
+
+  /**
+   * How far ink has to move to stay with its content after the layout changed (rotation, Split View, late images).
+   * Ink drawn on the page follows the element it was drawn on; margin ink stays beside the page edge and follows its paragraph.
+   */
+  function inkOffset(a: Annotation): { dx: number; dy: number } {
+    if (!doc) return { dx: 0, dy: 0 }
+    if (a.lane === 'margin') {
+      const dx = getWidth() - (a.layoutAt ?? LEGACY_WIDTH)
+      const target = a.leader ? resolveCss(a.leader.css, doc) : null
+      const dy = target && a.leader?.top !== undefined ? target.getBoundingClientRect().top - a.leader.top : 0
+      return { dx, dy }
+    }
+    const p = a.anchor.element ? elementPoint(doc, a.anchor.element) : null
+    if (!p) return { dx: 0, dy: 0 }
+    const dx = p.x - a.anchor.page.x
+    const dy = p.y - a.anchor.page.y
+    return Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 ? { dx: 0, dy: 0 } : { dx, dy }
   }
 
   const drop = (key: string) => { nodes.get(key)?.remove(); nodes.delete(key) }
@@ -68,8 +89,9 @@ export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => 
     if (!target) return
     const t = target.getBoundingClientRect()
     const b = a.ink.bbox
-    const x1 = b.x
-    const y1 = b.y + b.h / 2
+    const o = inkOffset(a)
+    const x1 = b.x + o.dx
+    const y1 = b.y + b.h / 2 + o.dy
     const x2 = t.right
     const y2 = Math.min(Math.max(y1, t.top + 6), t.bottom - 6) // end level with the scribble, inside the paragraph
     const mid = (x1 + x2) / 2
@@ -86,6 +108,8 @@ export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => 
       const g = group(a.layer)
       const path = make('path', { d: a.ink.path ?? outlinePath(absPoints(a), a.ink.tool, a.ink.size), fill: a.color }, g)
       path.dataset.id = a.id
+      const o = inkOffset(a)
+      if (o.dx || o.dy) path.setAttribute('transform', `translate(${o.dx} ${o.dy})`)
       if (a.ink.tool === 'highlighter') {
         path.style.opacity = '0.35'
         path.style.mixBlendMode = 'multiply'
@@ -113,7 +137,7 @@ export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => 
     for (const a of items.values()) {
       if (a.deleted) continue
       resolveOne(a)
-      if (isAnchored(a) || a.lane === 'margin') paint(a)
+      if (isAnchored(a) || a.kind === 'ink') paint(a)
     }
   }
 
@@ -153,7 +177,7 @@ export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => 
       const out: string[] = []
       for (const a of items.values()) {
         if (a.deleted) continue
-        if (a.kind === 'ink') { if (hitsInk(a, x, y, radius)) out.push(a.id) }
+        if (a.kind === 'ink') { const o = inkOffset(a); if (hitsInk(a, x - o.dx, y - o.dy, radius)) out.push(a.id) }
         else if (a.kind === 'highlight') {
           if (resolved.get(a.id)?.rects.some((r) => { const q = inflate(r, radius); return x >= q.x && x <= q.x + q.w && y >= q.y && y <= q.y + q.h })) out.push(a.id)
         } else if (a.kind === 'note') {

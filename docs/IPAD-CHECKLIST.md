@@ -20,6 +20,14 @@ Run on the Vercel preview URL (or production), in Safari first, then from the Ho
 - [ ] Toolbar can be dragged to the top, left, right and back; position is remembered.
 - [ ] "Draw with finger" (hand icon) lets a finger draw; Reading mode lets it scroll again.
 
+## Layout, rotation and loading speed
+- [ ] Import a real site (for example Wikipedia): in portrait the page looks like it does in Safari on your iPad (the tablet design, normal-sized text), not a tiny desktop page.
+- [ ] Rotate the iPad both ways: the page lays itself out again for the new width, and you are still reading the same paragraph.
+- [ ] Try Split View and a narrow window: the page follows the width.
+- [ ] Scroll a long page: images appear as you approach them, the view does not jump, and scrolling feels natural.
+- [ ] Mark text and write beside a paragraph, rotate, rotate back: highlights and handwriting stay with their paragraph.
+- [ ] Page options sheet, Layout: Auto vs Desktop, Tablet and Phone widths.
+
 ## Backup, restore and where you left off
 - [ ] Settings, Your data: "Back up everything" opens the iPad share sheet; save to Files or iCloud Drive. "Last backup" then says today.
 - [ ] Restore from backup picks that file and says how many pages and marks came back; nothing already there is lost.

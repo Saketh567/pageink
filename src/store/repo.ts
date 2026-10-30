@@ -61,7 +61,7 @@ export async function seedSample(fetchHtml: () => Promise<string>) {
   const now = new Date().toISOString()
   await savePage({
     id: SAMPLE_ID, schemaVersion: 1, url: '', siteOrigin: 'file:', title: 'How a web page works (sample)',
-    captureMethod: 'file', capturedAt: now, layoutWidth: 1280, docHeight: 0, textHash: '', tags: [], createdAt: now, updatedAt: now,
+    captureMethod: 'file', capturedAt: now, layoutWidth: 0, docHeight: 0, textHash: '', tags: [], createdAt: now, updatedAt: now,
   })
   await putSnapshot({ pageId: SAMPLE_ID, html, sanitizerVersion: 0 })
 }
@@ -80,5 +80,25 @@ export async function deleteCollection(id: ID) {
   for (const p of await tx.objectStore('pages').getAll()) {
     if (p.collectionId === id) await tx.objectStore('pages').put({ ...p, collectionId: undefined })
   }
+  await tx.done
+}
+
+/**
+ * One-time: pages used to be laid out at a fixed 1280 px and shrunk to fit; they now follow the screen (Auto).
+ * Ink keeps the width it was drawn at, so it can be moved with its content when the layout changes.
+ */
+export async function migrateToAutoLayout() {
+  if (await getSetting<boolean>('autoLayoutV1')) return
+  const db = await getDb()
+  const tx = db.transaction(['pages', 'annotations', 'settings'], 'readwrite')
+  for (const p of await tx.objectStore('pages').getAll()) {
+    for (const a of await tx.objectStore('annotations').index('pageId').getAll(p.id)) {
+      if (a.kind === 'ink' && a.layoutAt === undefined) await tx.objectStore('annotations').put({ ...a, layoutAt: p.layoutWidth })
+    }
+    if (p.layoutWidth === 1280) await tx.objectStore('pages').put({ ...p, layoutWidth: 0 })
+  }
+  const saved = await tx.objectStore('settings').get('defaultWidth')
+  if (saved?.value === 1280) await tx.objectStore('settings').put({ key: 'defaultWidth', value: 0 })
+  await tx.objectStore('settings').put({ key: 'autoLayoutV1', value: true })
   await tx.done
 }

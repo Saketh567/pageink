@@ -1,5 +1,5 @@
 import { effect } from '@preact/signals'
-import { elementAnchor, selectorFor } from '../anchor/css-selector.ts'
+import { elementAnchor, resolve as resolveCss, selectorFor } from '../anchor/css-selector.ts'
 import { describe as describeText, textIndex } from '../anchor/text-quote.ts'
 import { MEANINGS, type Meaning } from '../export/study-sheet.ts'
 import { putAnnotation } from '../store/repo.ts'
@@ -44,7 +44,7 @@ export function createEditor(viewer: Viewer, pageId: string, initial: Annotation
     clearTimeout(timer)
     timer = setTimeout(flush, 300)
     refreshMarks()
-  })
+  }, () => viewer.layoutWidth)
   function flush() {
     clearTimeout(timer)
     const ids = [...dirty]
@@ -200,13 +200,14 @@ export function createEditor(viewer: Viewer, pageId: string, initial: Annotation
         const now = new Date().toISOString()
         const a: Annotation = {
           id: crypto.randomUUID(), pageId, kind: 'ink', layer: 'ink', color: color.value,
-          anchor: { page: built.origin }, ink: built.stroke, createdAt: now, updatedAt: now,
+          anchor: { page: built.origin }, ink: built.stroke, layoutAt: viewer.layoutWidth, createdAt: now, updatedAt: now,
         }
         const b = built.stroke.bbox
         if (viewer.lane && b.x + b.w / 2 > viewer.layoutWidth) {
           a.lane = 'margin'
           const css = doc ? leaderTarget(doc, b.y + b.h / 2, viewer.layoutWidth) : null
-          if (css) a.leader = { css }
+          const top = css && doc ? resolveCss(css, doc)?.getBoundingClientRect().top : undefined
+          if (css) a.leader = { css, top }
         } else if (doc) {
           const el = elementAnchor(doc, built.origin.x, built.origin.y)
           if (el) a.anchor.element = el

@@ -8,6 +8,9 @@ async function open(page: Page) {
   await page.goto('/#/p/sample')
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
   await expect(page.locator('.viewer-frame')).toBeVisible()
+  // the page is at true size now, so bring the first paragraph up from under the toolbar, as a person would by scrolling
+  await page.locator('.viewer-scroll').evaluate((el) => { el.scrollTop = 380 })
+  await expect.poll(async () => (await paragraph(page).boundingBox())!.y).toBeLessThan(400)
 }
 
 const frame = (page: Page) => page.frameLocator('iframe.viewer-frame')

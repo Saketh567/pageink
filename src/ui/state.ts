@@ -26,11 +26,11 @@ function savedEdge(): Edge {
 }
 export const trayEdge = signal<Edge>(savedEdge())
 
-export type Width = 1280 | 820 | 390
-export const WIDTHS: Array<[Width, string]> = [[1280, 'Desktop 1280'], [820, 'Tablet 820'], [390, 'Phone 390']]
+export type Width = 0 | 1280 | 820 | 390
+export const WIDTHS: Array<[Width, string]> = [[0, 'Auto (fits this screen)'], [1280, 'Desktop 1280'], [820, 'Tablet 820'], [390, 'Phone 390']]
 
 export const appKey = signal('')
-export const defaultWidth = signal<Width>(1280)
+export const defaultWidth = signal<Width>(0)
 /** '' is the library; '/p/<id>' is a page; '/settings' is settings. */
 export const route = signal(location.hash.replace(/^#/, ''))
 addEventListener('hashchange', () => (route.value = location.hash.replace(/^#/, '')))
