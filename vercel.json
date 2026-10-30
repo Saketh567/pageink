@@ -46,5 +46,6 @@
         }
       ]
     }
-  ]
+  ],
+  "ignoreCommand": "test \"$VERCEL_GIT_COMMIT_REF\" != \"main\""
 }
