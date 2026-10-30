@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { savedAnnotations } from './idb.ts'
 
 const paths = (page: Page) => page.locator('svg.viewer-ink g[data-layer=ink] path')
 
@@ -31,7 +32,7 @@ test('draw, undo, redo, erase and persist across reload', async ({ page }) => {
   await page.getByRole('button', { name: 'Redo' }).click()
   await expect(paths(page)).toHaveCount(1)
 
-  await page.waitForTimeout(500) // autosave debounce
+  await expect.poll(() => savedAnnotations(page)).toBe(1) // wait for the autosave, not a fixed delay
   await page.reload()
   await expect(paths(page)).toHaveCount(1)
 

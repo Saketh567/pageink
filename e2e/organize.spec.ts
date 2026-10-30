@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { savedSetting } from './idb.ts'
 
 const PAGES: Record<string, string> = {
   'alpha.example': 'Alpha Guide',
@@ -93,6 +94,11 @@ test('layout, sort, theme and accent persist across a reload', async ({ page }) 
   await page.getByRole('button', { name: 'Accent #ff2d55' }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   expect(await page.evaluate(() => document.documentElement.style.getPropertyValue('--accent'))).toBe('#ff2d55')
+  // wait for the background save to land before reloading (slow CI machines)
+  await expect.poll(() => savedSetting(page, 'accent')).toBe('#ff2d55')
+  await expect.poll(() => savedSetting(page, 'theme')).toBe('light')
+  await expect.poll(() => savedSetting(page, 'view')).toBe('list')
+  await expect.poll(() => savedSetting(page, 'sort')).toBe('name')
 
   await page.reload()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
