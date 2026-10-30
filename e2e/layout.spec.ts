@@ -101,12 +101,10 @@ test('images load as you get near them, not all at once', async ({ page }) => {
   await page.goto('/')
   await page.locator('input[type=file]').setInputFiles({ name: 'long.html', mimeType: 'text/html', buffer: Buffer.from(`<!doctype html><title>Long</title><body>${imgs}</body>`) })
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
-  await page.waitForTimeout(1200)
-  expect(requested.size).toBeGreaterThan(0)
-  expect(requested.size).toBeLessThan(20) // 40 images, but only those near the screen were fetched
-
   const has = (n: number) => [...requested].some((u) => u.endsWith(`/lazy/${n}.png`))
-  expect(has(0)).toBe(true)
+  await expect.poll(() => has(0)).toBe(true) // the images at the top are fetched ...
+  await page.waitForTimeout(500) // (give any wrongly eager loading time to show itself)
+  expect(requested.size).toBeLessThan(20) // ... but of 40 images only those near the screen were
   expect(has(39)).toBe(false)
   await page.locator('.viewer-scroll').evaluate((el) => { el.scrollTop = el.scrollHeight }) // jump to the bottom
   await expect.poll(() => has(39), { timeout: 15000 }).toBe(true)
