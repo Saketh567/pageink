@@ -78,6 +78,13 @@ describe('checkAuth', () => {
     expect(checkAuth('secret', 'secret')).toBe('unauthorized')
     expect(checkAuth('Bearer x', undefined)).toBe('unconfigured')
   })
+
+  test('stray whitespace around the stored key or the typed key does not break the match', () => {
+    expect(checkAuth('Bearer secret', 'secret\n')).toBe('ok')
+    expect(checkAuth('Bearer secret', ' secret ')).toBe('ok')
+    expect(checkAuth('Bearer secret ', 'secret')).toBe('ok')
+    expect(checkAuth('Bearer secret', '   ')).toBe('unconfigured')
+  })
 })
 
 describe('createLimiter', () => {

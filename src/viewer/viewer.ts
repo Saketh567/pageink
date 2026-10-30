@@ -1,6 +1,7 @@
 import { clampScale, clientToDoc, zoomScroll, type Pt } from './coords.ts'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
+const MEASURE_WINDOW = 900
 
 export interface Viewer {
   container: HTMLElement
@@ -65,8 +66,17 @@ export async function createViewer(host: HTMLElement, html: string, layoutWidth:
   function measure() {
     const doc = iframe.contentDocument
     if (!doc) return
-    iframe.style.height = '0px'
-    docHeight = Math.max(doc.documentElement.scrollHeight, 1)
+    // Measure inside a normal-sized window: pages with html/body { height: 100% } collapse to nothing in a 0 px one.
+    // scrollHeight still counts content that overflows (even with overflow hidden), so tall pages report their full height.
+    iframe.style.height = MEASURE_WINDOW + 'px'
+    // html reports only one window when body clips its overflow (Wikipedia); body.scrollHeight still has the real height
+    let h = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight)
+    if (h <= MEASURE_WINDOW) {
+      // short page (or one that only fills the window): use its lowest element, not the window size
+      const bottoms = Array.from(doc.body.children, (e) => e.getBoundingClientRect().bottom)
+      h = Math.max(300, Math.ceil(Math.max(0, ...bottoms)))
+    }
+    docHeight = h
     applySize()
     notify()
   }

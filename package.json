@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.api.json",
     "test": "vitest run",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "local": "npm run build && node scripts/local.mts"
   },
   "dependencies": {
     "@preact/signals": "^2.11.4",

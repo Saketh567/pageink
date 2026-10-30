@@ -90,6 +90,7 @@ export function Settings() {
           <input id="finger" type="checkbox" checked={drawWithFinger.value} onChange={(e) => setPref('drawWithFinger', drawWithFinger, (e.target as HTMLInputElement).checked)} />
         </div>
       </section>
+      <p class="hint" style={{ textAlign: 'center', marginTop: '18px' }}>PageInk build {__BUILD__}</p>
     </div>
   )
 }

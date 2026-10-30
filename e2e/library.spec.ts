@@ -75,6 +75,27 @@ test('importing a saved .html file works and never executes its script', async (
   expect(await frame.locator('body').evaluate(() => (window as unknown as { __pwned?: number }).__pwned)).toBeUndefined()
 })
 
+async function importedHeight(page: Page, html: string) {
+  await page.goto('/')
+  await page.locator('input[type=file]').setInputFiles({ name: 'p.html', mimeType: 'text/html', buffer: Buffer.from(html) })
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
+  return Number(await page.locator('svg.viewer-ink').getAttribute('height'))
+}
+
+test('a page with html/body height 100% keeps its full height (Wikipedia-style)', async ({ page }) => {
+  // html and body are one window tall and body clips its overflow, and the only child is a zero-height wrapper:
+  // neither html.scrollHeight nor the child's position knows the real height; only body.scrollHeight does
+  const rows = '<div style="height:60px;border-bottom:1px solid #ccc">A row of real content.</div>'.repeat(120)
+  const h = await importedHeight(page, `<!doctype html><title>Tall</title><style>html,body{height:100%;margin:0}body{overflow:hidden}</style><body><div style="height:0">${rows}</div></body>`)
+  expect(h).toBeGreaterThan(7000)
+})
+
+test('a short page is not stretched to the measuring window', async ({ page }) => {
+  const h = await importedHeight(page, '<!doctype html><title>Short</title><body style="margin:0"><h1 style="margin:0;height:120px">Hi</h1></body>')
+  expect(h).toBeLessThan(600)
+  expect(h).toBeGreaterThanOrEqual(120)
+})
+
 test('rename and delete from the page options sheet', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: /Options for How a web page works/ }).click()

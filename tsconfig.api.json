@@ -12,5 +12,5 @@
     "noEmit": true,
     "erasableSyntaxOnly": true
   },
-  "include": ["api"]
+  "include": ["api", "scripts"]
 }
