@@ -47,3 +47,63 @@ test('a link to another site asks first', async ({ page }) => {
   await page.mouse.click(link!.x + 10, link!.y + 8)
   await expect(page.getByRole('dialog', { name: 'Link' })).toBeVisible()
 })
+
+const SITE = 'https://shop.example'
+const pageHtml = (title: string, extra: string) => `<!doctype html><title>${title}</title><body style="margin:0;font:20px Georgia">
+<h1>${title}</h1>${extra}<p id="para" style="margin:24px 0">The warranty covers manufacturing defects for two full years from the date of purchase.</p>
+<details><summary>Can I return it?</summary><p>Returns are accepted within thirty days.</p></details>
+${'<p style="margin:0 0 12px">Filler paragraph so the page is long enough to scroll through properly.</p>'.repeat(30)}</body>`
+const SITE_PAGES: Record<string, string> = {
+  [`${SITE}/a`]: pageHtml('Shop A', `<p><a href="${SITE}/b">Go to page B</a></p>`),
+  [`${SITE}/b`]: pageHtml('Shop B', `<p><a href="${SITE}/a">Back to A</a></p>`),
+}
+
+test('marks stay on each page of a site while you move between its pages', async ({ page }) => {
+  await page.setViewportSize({ width: 820, height: 1180 })
+  await page.route('**/api/fetch', async (route) => {
+    const { url } = route.request().postDataJSON()
+    const html = SITE_PAGES[url.replace(/\/$/, '')]
+    await route.fulfill(html ? { json: { html, finalUrl: url, status: 200 } } : { status: 404, json: { error: 'UPSTREAM_404' } })
+  })
+  const para = () => frame(page).locator('#para')
+  const markFirstWords = async () => {
+    await page.getByRole('button', { name: 'Mark text' }).click()
+    const box = (await para().boundingBox())!
+    await page.mouse.move(box.x + 30, box.y + 12)
+    await page.mouse.down()
+    await page.mouse.move(box.x + 120, box.y + 12, { steps: 8 })
+    await page.mouse.up()
+    await expect(page.locator('svg.viewer-ink g[data-layer=highlights] > g')).toHaveCount(1)
+  }
+
+  await page.goto('/')
+  await page.getByRole('textbox', { name: 'Web address' }).fill(`${SITE}/a`)
+  await page.getByRole('button', { name: 'Import', exact: true }).click()
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
+  await page.locator('.viewer-scroll').evaluate((el) => { el.scrollTop = 100 })
+  await markFirstWords()
+
+  // read the FAQ on A, then follow a link to B (same site: opens straight away)
+  await reading(page)
+  const q = await frame(page).locator('summary').boundingBox()
+  await page.mouse.click(q!.x + 30, q!.y + 10)
+  await expect(frame(page).getByText('Returns are accepted')).toBeVisible()
+  const link = await frame(page).getByRole('link', { name: 'Go to page B' }).boundingBox()
+  await page.mouse.click(link!.x + 10, link!.y + 8)
+  await expect(frame(page).getByRole('heading', { name: 'Shop B' })).toBeVisible()
+  await expect(page.locator('svg.viewer-ink g[data-layer=highlights] > g')).toHaveCount(0) // B has no marks yet
+
+  await page.locator('.viewer-scroll').evaluate((el) => { el.scrollTop = 100 })
+  await page.getByRole('button', { name: /tap for markup mode/ }).click()
+  await markFirstWords()
+
+  // back to A: its mark is still there, and B's is not shown on it
+  await page.getByRole('button', { name: 'Back to Shop A' }).click()
+  await expect(frame(page).getByRole('heading', { name: 'Shop A' })).toBeVisible()
+  await expect(page.locator('svg.viewer-ink g[data-layer=highlights] > g')).toHaveCount(1)
+
+  // and it survives a reload
+  await page.reload()
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
+  await expect(page.locator('svg.viewer-ink g[data-layer=highlights] > g')).toHaveCount(1)
+})
