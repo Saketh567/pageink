@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { createEditor } from '../ink/editor.ts'
 import { sanitize, SANITIZER_VERSION } from '../import/sanitize.ts'
 import { importUrl } from '../import/import-url.ts'
-import { getPage, getSnapshot, getSetting, listAnnotations, patchPage, putSnapshot, savePage, setSetting } from '../store/repo.ts'
+import { findPageByUrl, getPage, getSnapshot, getSetting, listAnnotations, patchPage, putSnapshot, savePage, setSetting } from '../store/repo.ts'
 import { attachLinkTaps, type LinkTap } from '../viewer/links.ts'
 import { revealHidden } from '../viewer/widgets.ts'
 import { createViewer } from '../viewer/viewer.ts'
@@ -17,6 +17,9 @@ export function Reader({ pageId }: { pageId: string }) {
   const host = useRef<HTMLDivElement>(null)
   const [link, setLinkRaw] = useState<LinkTap | null>(null)
   const linkAt = useRef(0)
+  const following = useRef(false)
+  const live = useRef(pageId) // the page on screen now, for work that finishes later
+  live.current = pageId
   const setLink = (l: LinkTap | null) => { linkAt.current = performance.now(); setLinkRaw(l) }
   const [width, setWidth] = useState(1280)
   const [busy, setBusy] = useState('')
@@ -96,14 +99,19 @@ export function Reader({ pageId }: { pageId: string }) {
 
   /** Opens another page: the copy you already have, or a fresh import. A Back chip then leads back to where you came from. */
   async function followLink(href: string, fromId: string, layout: number) {
+    if (following.current) return // a second tap while the first page is still coming in
+    following.current = true
     setError('')
     try {
+      if (await findPageByUrl(href)) notice.value = 'Opened your saved copy'
       const next = await importUrl(href, layout, appKey.value, setBusy)
+      if (live.current !== fromId) return // you went somewhere else meanwhile: the page is saved, but do not pull you away
       if (next.id !== fromId) trail.value = [...trail.value.filter((id) => id !== next.id), fromId]
       go(`/p/${next.id}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Import failed.')
     } finally {
+      following.current = false
       setBusy('')
     }
   }
@@ -111,7 +119,9 @@ export function Reader({ pageId }: { pageId: string }) {
 
   useEffect(() => {
     if (!trailTop || trailTop === pageId) { setPrev(null); return }
-    void getPage(trailTop).then((p) => setPrev(p ? { id: trailTop, title: p.title } : null))
+    let stale = false
+    void getPage(trailTop).then((p) => { if (!stale) setPrev(p ? { id: trailTop, title: p.title } : null) })
+    return () => { stale = true }
   }, [pageId, trailTop])
 
   useEffect(() => {

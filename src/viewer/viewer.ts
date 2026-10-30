@@ -102,12 +102,15 @@ export async function createViewer(host: HTMLElement, html: string, requestedWid
     const span = container.clientHeight / scale
     const from = top - span
     const to = top + span * 2.5
+    const mid = top + span / 2
+    const due: Array<[number, HTMLImageElement]> = []
     lazy = lazy.filter((img) => {
       const r = img.getBoundingClientRect() // the iframe is never scrolled, so these are document coordinates
       if (r.bottom < from || r.top > to) return true
-      activate(img)
+      due.push([Math.abs((r.top + r.bottom) / 2 - mid), img])
       return false
     })
+    due.sort((a, b) => a[0] - b[0]).forEach(([, img]) => activate(img)) // the picture closest to where you are reading goes first
   }
   const queueWake = () => {
     if (wakeQueued) return

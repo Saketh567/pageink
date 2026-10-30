@@ -1,3 +1,4 @@
+import { useState } from 'preact/hooks'
 import { MEANINGS } from '../export/study-sheet.ts'
 import { revealHidden } from '../viewer/widgets.ts'
 import { actions, activeViewer, canRedo, canUndo, color, drawWithFinger, go, margin, marks, meaning, mode, notice, panelOpen, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
@@ -15,6 +16,7 @@ const ICONS = {
   note: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', 'M7 8h10', 'M7 12h6'],
   list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
   expand: ['m7 15 5 5 5-5', 'm7 9 5-5 5 5'],
+  palette: ['M12 22a10 10 0 1 1 10-10c0 3-2 4-4 4h-2a2 2 0 0 0-1 3.5A1.5 1.5 0 0 1 12 22Z', 'M7.5 11h.01', 'M12 7h.01', 'M16.5 11h.01'],
   lane: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M15 3v18'],
 }
 
@@ -58,13 +60,14 @@ export function ToolTray() {
   const markup = mode.value === 'markup'
   const t = tool.value
   const anchored = t === 'mark' || t === 'note'
+  const [more, setMore] = useState(false) // narrow screens keep colours and sizes behind one button
   return (
     <div class={`tray edge-${trayEdge.value}`} role="toolbar" aria-label="Markup tools">
       <div class="grp">
         <button class="grip" aria-label="Move toolbar" onPointerDown={dragTray}>⋮⋮</button>
         <button aria-label="Back to library" onClick={() => go('')}><Icon name="back" /></button>
         <button
-          class={markup ? 'on' : ''}
+          class="modeswitch"
           aria-label={markup ? 'Markup mode, tap for reading mode' : 'Reading mode, tap for markup mode'}
           onClick={() => (mode.value = markup ? 'read' : 'markup')}
         >
@@ -80,6 +83,7 @@ export function ToolTray() {
               </button>
             ))}
           </div>
+          <div class={`more ${more ? 'open' : ''}`}>
           {anchored && (
             <div class="grp" role="group" aria-label="Meaning">
               {MEANINGS.map(([id, label, hex]) => (
@@ -106,6 +110,7 @@ export function ToolTray() {
               </div>
             </>
           )}
+          </div>
           <div class="grp">
             <button disabled={!canUndo.value} aria-label="Undo" onClick={() => actions.undo()}><Icon name="undo" /></button>
             <button disabled={!canRedo.value} aria-label="Redo" onClick={() => actions.redo()}><Icon name="redo" /></button>
@@ -116,6 +121,11 @@ export function ToolTray() {
         </>
       )}
       <div class="grp">
+        {markup && (
+          <button class={`morebtn ${more ? 'on' : ''}`} aria-label="More tools" aria-pressed={more} onClick={() => setMore(!more)}>
+            <Icon name="palette" />
+          </button>
+        )}
         <button aria-label="Expand all sections" title="Open every dropdown and FAQ" onClick={expandAll}><Icon name="expand" /></button>
         <button class={margin.value ? 'on' : ''} aria-label="Margin lane" aria-pressed={margin.value} onClick={() => (margin.value = !margin.value)}><Icon name="lane" /></button>
         <button class={`withbadge ${panelOpen.value ? 'on' : ''}`} aria-label="Marks" aria-pressed={panelOpen.value} onClick={() => (panelOpen.value = !panelOpen.value)}>

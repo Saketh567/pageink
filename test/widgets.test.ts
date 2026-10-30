@@ -59,6 +59,27 @@ describe('tapping dropdowns and FAQ headers', () => {
     expect(tap($('l'))).toBe(true)
   })
 
+  test('a link inside a menu item marked aria-expanded (no panel to open) is left to navigate', () => {
+    page('<ul><li id="li" aria-expanded="false"><a id="l" href="/products">Products</a></li></ul>')
+    expect(tap($('l'))).toBe(false)
+    expect($('li').getAttribute('aria-expanded')).toBe('false')
+  })
+
+  test('a button inside an accordion item toggles its own answer, not the item', () => {
+    page('<div id="item" aria-expanded="false"><button id="b">Question</button><div id="a" style="display:none">Answer</div></div>')
+    expect(tap($('b'))).toBe(true)
+    expect($('a').style.getPropertyValue('display')).toBe('block')
+  })
+
+  test('closing a panel gives back the styles the page gave it', () => {
+    page('<button id="b" aria-expanded="false" aria-controls="p">Q</button><div id="p" hidden style="height:300px;overflow:auto">A</div>')
+    tap($('b'))
+    expect($('p').style.getPropertyValue('height')).toBe('auto')
+    tap($('b'))
+    expect($('p').style.getPropertyValue('height')).toBe('300px')
+    expect($('p').style.getPropertyValue('display')).toBe('none')
+  })
+
   test('plain text and an empty spot do nothing', () => {
     page('<p id="t">Just text</p>')
     expect(tap($('t'))).toBe(false)
@@ -82,6 +103,12 @@ describe('revealHidden', () => {
     expect($('cookie').style.getPropertyValue('opacity')).toBe('0')
     expect($('fixed').style.getPropertyValue('opacity')).toBe('0')
     expect($('visible').style.getPropertyValue('opacity')).toBe('')
+  })
+
+  test('a picture that a site fades in is shown too', () => {
+    page('<div id="w" style="opacity:0"><img id="i" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"></div>')
+    revealHidden(document)
+    expect($('w').style.getPropertyValue('opacity')).toBe('1')
   })
 
   test('a hidden wrapper around visible-looking text is fixed from the text outwards', () => {
@@ -108,6 +135,12 @@ describe('revealHidden', () => {
     page('<p>Plain readable text on the page.</p>')
     expect(revealHidden(document, { expandAll: true })).toBe(0)
   })
+})
+
+test('revealAncestors never forces open a dialog or cookie banner', () => {
+  page('<div id="dlg" role="dialog" hidden><p id="t">Sign up now for the newsletter</p></div>')
+  expect(revealAncestors($('t').firstChild!)).toBe(false)
+  expect(($('dlg') as HTMLElement).hidden).toBe(true)
 })
 
 test('revealAncestors opens the sections that hide a node', () => {

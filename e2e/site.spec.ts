@@ -123,3 +123,23 @@ test.describe('a finger always browses, even in Mark mode', () => {
     await expect(page.getByRole('dialog', { name: 'Link' })).toBeVisible()
   })
 })
+
+test('pictures that a site loads with its own script still appear', async ({ page }) => {
+  const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6oAAAAAElFTkSuQmCC', 'base64')
+  await page.route('https://img.example/**', (route) => route.fulfill({ body: PNG, contentType: 'image/png' }))
+  const html = `<!doctype html><title>Lazy</title><style>.lazyload{opacity:0}.lazyloaded{opacity:1}.bg{width:200px;height:80px}</style><body style="margin:0">
+    <h1>Lazy</h1><img id="a" class="lazyload" data-original="https://img.example/a.png" width="100" height="100">
+    <img id="b" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" data-lazy="https://img.example/b.png" width="100" height="100">
+    <div id="c" class="bg" data-bg="https://img.example/c.png"></div>
+    <div style="opacity:0"><img id="d" src="https://img.example/d.png" width="100" height="100"></div></body>`
+  await page.setViewportSize({ width: 820, height: 1180 })
+  await page.goto('/')
+  await page.locator('input[type=file]').setInputFiles({ name: 'lazy.html', mimeType: 'text/html', buffer: Buffer.from(html) })
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
+  const f = frame(page)
+  for (const id of ['a', 'b', 'd']) {
+    await expect.poll(() => f.locator('#' + id).evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 1)).toBe(true)
+    await expect.poll(() => f.locator('#' + id).evaluate((i) => { let o = 1; for (let e: Element | null = i; e; e = e.parentElement) o = Math.min(o, Number(getComputedStyle(e).opacity)); return o })).toBe(1)
+  }
+  expect(await f.locator('#c').evaluate((e) => getComputedStyle(e).backgroundImage)).toContain('c.png')
+})

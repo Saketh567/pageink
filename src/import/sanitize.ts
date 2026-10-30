@@ -1,14 +1,22 @@
 import DOMPurify from 'dompurify'
 
-export const SANITIZER_VERSION = 2
+export const SANITIZER_VERSION = 3
 
 const LAZY: Array<[string, string]> = [['data-src', 'src'], ['data-lazy-src', 'src'], ['data-srcset', 'srcset']]
+/** More ways sites hide the real image until a script runs. Only images and sources take these. */
+const LAZY_IMG: Array<[string, string]> = [
+  ['data-original', 'src'], ['data-lazy', 'src'], ['data-original-src', 'src'], ['data-hi-res-src', 'src'], ['data-image', 'src'],
+  ['data-lazy-srcset', 'srcset'], ['data-original-set', 'srcset'],
+]
+/** Background images loaded by script from one of these attributes. */
+const LAZY_BG = ['data-bg', 'data-background-image', 'data-background']
+const IMAGE_ADDRESS = /^(url\(|https?:|\/|\.\.?\/|data:image)/i
 const FORBID_TAGS = ['script', 'iframe', 'frame', 'frameset', 'object', 'embed', 'form', 'base', 'portal', 'applet']
 const FORBID_ATTR = ['srcdoc', 'ping', 'formaction']
 const PAGE_CSP = "script-src 'none'; object-src 'none'; form-action 'none'"
 /** A 1x1 transparent image: stands in for an image until it is near the screen, so there is no broken-image icon or alt text. */
 const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-const FREEZE_CSS = 'html,body{overflow:hidden!important}'
+const FREEZE_CSS = 'html,body{overflow:hidden!important}img[data-pk-src]{background:rgba(128,128,128,.14)}'
 
 const parse = (html: string) => new DOMParser().parseFromString(html, 'text/html')
 
@@ -58,6 +66,24 @@ export function sanitize(raw: string, baseUrl?: string): string {
       el.removeAttribute(from)
     })
   }
+  for (const [from, to] of LAZY_IMG) {
+    doc.querySelectorAll(`img[${from}], source[${from}]`).forEach((el) => {
+      if (!el.getAttribute(from)) return
+      el.setAttribute(to, el.getAttribute(from)!)
+      el.removeAttribute(from)
+    })
+  }
+  for (const attr of LAZY_BG) {
+    doc.querySelectorAll<HTMLElement>(`[${attr}]`).forEach((el) => {
+      const v = el.getAttribute(attr)!.trim()
+      if (!el.style.backgroundImage && IMAGE_ADDRESS.test(v)) el.style.backgroundImage = /^url\(/i.test(v) ? v : `url("${v.replace(/"/g, '%22')}")`
+    })
+  }
+  // lazysizes-style sites show images only once a script swaps these classes
+  doc.querySelectorAll('.lazyload, .lazyloading').forEach((el) => {
+    el.classList.remove('lazyload', 'lazyloading')
+    el.classList.add('lazyloaded')
+  })
   doc.querySelectorAll('[loading]').forEach((el) => el.removeAttribute('loading'))
   // Park every image's address. The page is shown at full height, so the browser would fetch all of its images at
   // once (hundreds on a big site); the viewer restores each one when it is near the screen.
@@ -66,6 +92,7 @@ export function sanitize(raw: string, baseUrl?: string): string {
     src.removeAttribute('srcset')
   })
   doc.querySelectorAll('img').forEach((img) => {
+    img.setAttribute('decoding', 'async') // keeps scrolling smooth while pictures are drawn
     const src = img.getAttribute('src')
     const set = img.getAttribute('srcset')
     if (set) { img.setAttribute('data-pk-srcset', set); img.removeAttribute('srcset') }

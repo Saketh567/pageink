@@ -126,3 +126,32 @@ describe('inspectHtml', () => {
     expect(r.emptyRoot).toBe(false)
   })
 })
+
+describe('images that a site only shows once a script runs', () => {
+  const out = (html: string) => new DOMParser().parseFromString(sanitize(html, 'https://shop.example/'), 'text/html')
+
+  test('other lazy attributes (data-original, data-lazy, data-lazy-srcset) become the real address', () => {
+    const d = out('<img id="a" src="data:image/gif;base64,AAAA" data-original="/a.jpg"><img id="b" data-lazy="/b.jpg" data-lazy-srcset="/b2.jpg 2x"><picture><source id="s" data-lazy-srcset="/s.webp"><img id="c" src="/c.jpg"></picture>')
+    expect(d.getElementById('a')!.dataset.pkSrc).toBe('/a.jpg')
+    expect(d.getElementById('b')!.dataset.pkSrc).toBe('/b.jpg')
+    expect(d.getElementById('b')!.dataset.pkSrcset).toBe('/b2.jpg 2x')
+    expect(d.getElementById('s')!.dataset.pkSrcset).toBe('/s.webp')
+  })
+
+  test('data-bg becomes a real background image; a colour in data-background is ignored', () => {
+    const d = out('<div id="x" data-bg="/hero.jpg"></div><div id="y" data-background="#ff0000"></div><div id="z" data-bg="url(/z.jpg)"></div>')
+    expect(d.getElementById('x')!.style.backgroundImage).toContain('/hero.jpg')
+    expect(d.getElementById('y')!.style.backgroundImage).toBe('')
+    expect(d.getElementById('z')!.style.backgroundImage).toContain('/z.jpg')
+  })
+
+  test('lazysizes classes are swapped so the picture is not left at opacity 0', () => {
+    const d = out('<img id="i" class="lazyload hero" data-src="/i.jpg">')
+    const c = d.getElementById('i')!.classList
+    expect(c.contains('lazyloaded') && c.contains('hero') && !c.contains('lazyload')).toBe(true)
+  })
+
+  test('every image is decoded off the main thread', () => {
+    expect(out('<img id="i" src="/i.jpg">').getElementById('i')!.getAttribute('decoding')).toBe('async')
+  })
+})

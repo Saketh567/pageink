@@ -19,6 +19,7 @@ function isHidden(el: Element): boolean {
 }
 
 export function showPanel(el: HTMLElement) {
+  if (!el.dataset.pkPrev) el.dataset.pkPrev = JSON.stringify(FORCE_SHOWN.map(([k]) => el.style.getPropertyValue(k)))
   el.hidden = false
   el.removeAttribute('aria-hidden')
   el.dataset.pkShown = '1'
@@ -27,7 +28,8 @@ export function showPanel(el: HTMLElement) {
 
 export function hidePanel(el: HTMLElement) {
   delete el.dataset.pkShown
-  for (const [k] of FORCE_SHOWN) el.style.removeProperty(k)
+  const prev: string[] = JSON.parse(el.dataset.pkPrev ?? '[]')
+  FORCE_SHOWN.forEach(([k], i) => (prev[i] ? el.style.setProperty(k, prev[i]) : el.style.removeProperty(k))) // give back the page's own styles
   el.style.setProperty('display', 'none', 'important')
 }
 
@@ -42,6 +44,7 @@ function panelsOf(ctl: Element): HTMLElement[] {
 
 function setExpanded(ctl: Element, open: boolean): boolean {
   const panels = panelsOf(ctl)
+  if (!panels.length) return false // not a real toggle (a menu item, a tree row): leave the tap to whatever is inside
   ctl.setAttribute('aria-expanded', String(open))
   for (const p of panels) (open ? showPanel : hidePanel)(p)
   return true
@@ -59,22 +62,20 @@ export function toggleAt(doc: Document, x: number, y: number): boolean {
     return true
   }
 
-  const ctl = el.closest('[aria-expanded]')
-  if (ctl) {
+  const ctl = el.closest('[aria-expanded], button, [role="button"]') // the nearest one: a button inside an accordion item wins over the item
+  if (!ctl) return false
+  if (ctl.hasAttribute('aria-expanded')) {
     const href = ctl.getAttribute('href')
     if (href && !href.startsWith('#')) return false // a real link that happens to be a menu item: let it navigate
     return setExpanded(ctl, ctl.getAttribute('aria-expanded') !== 'true')
   }
 
   // FAQ markup with no aria at all: a button followed by a hidden answer
-  const button = el.closest('button, [role="button"]')
-  if (button) {
-    const next = button.nextElementSibling as HTMLElement | null
-    if (next && (isHidden(next) || next.dataset.pkShown)) {
-      if (next.dataset.pkShown) hidePanel(next)
-      else showPanel(next)
-      return true
-    }
+  const next = ctl.nextElementSibling as HTMLElement | null
+  if (next && (isHidden(next) || next.dataset.pkShown)) {
+    if (next.dataset.pkShown) hidePanel(next)
+    else showPanel(next)
+    return true
   }
   return false
 }
@@ -91,17 +92,21 @@ export function revealHidden(doc: Document, opts: { expandAll?: boolean } = {}):
   let changed = 0
   const hasLayout = doc.body.getClientRects().length > 0 // false in test environments without layout
 
+  const fixedMemo = new Map<Element, boolean>()
+  const isFixed = (a: Element | null): boolean => {
+    if (!a || a === doc.body) return false
+    let v = fixedMemo.get(a)
+    if (v === undefined) { v = win(a).getComputedStyle(a).position === 'fixed' || isFixed(a.parentElement); fixedMemo.set(a, v) }
+    return v
+  }
+  // text, and pictures, that a site only shows once its script has run
   for (const el of Array.from(doc.body.querySelectorAll('*'))) {
-    if (!ownText(el) || el.closest(KEEP_HIDDEN)) continue
+    if (!(ownText(el) || el.tagName === 'IMG') || el.closest(KEEP_HIDDEN)) continue
     const w = win(el)
-    if (hasLayout && el.getClientRects().length === 0) continue // not drawn at all (display none somewhere above)
+    if (hasLayout && el.tagName !== 'IMG' && el.getClientRects().length === 0) continue // not drawn at all (display none somewhere above)
     const s = w.getComputedStyle(el)
     // fixed overlays (banners, chat widgets) are hidden on purpose; so is anything inside one
-    let fixed = false
-    for (let a: Element | null = el; a && a !== doc.body; a = a.parentElement) {
-      if (w.getComputedStyle(a).position === 'fixed') { fixed = true; break }
-    }
-    if (fixed) continue
+    if (isFixed(el)) continue
     if (s.visibility === 'hidden') { (el as HTMLElement).style.setProperty('visibility', 'visible', 'important'); changed++ }
     for (let a: Element | null = el; a && a !== doc.body; a = a.parentElement) {
       if (a.matches(KEEP_HIDDEN)) break
@@ -127,7 +132,7 @@ export function revealAncestors(node: Node): boolean {
   let changed = false
   for (let e = node.parentElement; e && e !== e.ownerDocument.body && e !== e.ownerDocument.documentElement; e = e.parentElement) {
     if (e.tagName === 'DETAILS' && !(e as HTMLDetailsElement).open) { e.setAttribute('open', ''); changed = true }
-    else if (isHidden(e)) { showPanel(e as HTMLElement); changed = true }
+    else if (!e.matches(KEEP_HIDDEN) && isHidden(e)) { showPanel(e as HTMLElement); changed = true }
   }
   return changed
 }
