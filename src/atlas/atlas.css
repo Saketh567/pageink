@@ -37,7 +37,7 @@
 @media (prefers-reduced-motion: reduce) { .atlas { animation: none; } }
 @supports not (color: oklch(0 0 0)) { .atlas { --accent: #3cc6ee; } .atlas[data-world='day'] { --accent: #0a83b8; } }
 
-.atlas::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, color-mix(in oklab, var(--void-edge), var(--accent) 6%) 100%); }
+.atlas::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, color-mix(in oklab, var(--void-edge), var(--accent) 6%) 100%); }
 
 .atlas .world { position: absolute; left: 0; top: 0; transform-origin: 0 0; contain: layout style; }
 .atlas .world.hidden { visibility: hidden; }
