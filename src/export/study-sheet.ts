@@ -1,3 +1,6 @@
+/**
+ * The meanings a mark can have (colours) and the Markdown study sheet made from a page's highlights and notes.
+ */
 import type { Annotation, Page } from '../store/schema.ts'
 
 export const MEANINGS = [

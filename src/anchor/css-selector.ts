@@ -1,3 +1,7 @@
+/**
+ * Builds a stable CSS selector for an element (ignoring generated ids and classes) and finds it again later, so
+ * ink can stay with the thing it was drawn on.
+ */
 import type { Pt } from '../viewer/coords.ts'
 
 /** Ids like "radix-:r1:" or "a3f9c2e81b" change on every build, so they are not worth anchoring to. */

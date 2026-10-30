@@ -1,3 +1,6 @@
+/**
+ * One saved page in the library, as a card or a list row.
+ */
 import { useState } from 'preact/hooks'
 import type { Row } from '../store/organize.ts'
 import type { Collection } from '../store/schema.ts'
@@ -10,7 +13,9 @@ function gradientFor(key: string): string {
   return `linear-gradient(135deg, hsl(${h} 62% 46%), hsl(${(h + 48) % 360} 66% 34%))`
 }
 
-const host = (r: Row) => (r.url ? new URL(r.url).hostname.replace(/^www\./, '') : r.siteOrigin === 'file:' ? 'Saved file' : r.siteOrigin)
+const host = (r: Row) => {
+  try { return r.url ? new URL(r.url).hostname.replace(/^www\./, '') : r.siteOrigin === 'file:' ? 'Saved file' : r.siteOrigin } catch { return 'Saved page' } // a bad address must not break the whole library
+}
 
 interface Props {
   row: Row

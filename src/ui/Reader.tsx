@@ -1,3 +1,7 @@
+/**
+ * The reading screen: opens a saved page, wires up marking, link following, carousels and the toolbar, and
+ * remembers where you were. Same-site links import and open the next page.
+ */
 import { effect } from '@preact/signals'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { createEditor } from '../ink/editor.ts'

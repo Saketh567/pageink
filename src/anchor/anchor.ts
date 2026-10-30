@@ -1,3 +1,7 @@
+/**
+ * Finds a saved mark again on the page: by its words first, then its element, then the spot it was made. Marks
+ * that cannot be found are shown dimmed, never deleted.
+ */
 import type { Annotation, Rect } from '../store/schema.ts'
 import { elementPoint, resolve as resolveCss } from './css-selector.ts'
 import { revealAncestors } from '../viewer/widgets.ts'

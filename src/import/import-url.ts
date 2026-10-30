@@ -1,3 +1,7 @@
+/**
+ * Importing from a web address: reuse a saved copy, fetch quickly, fall back to the rendered browser for blocked
+ * or script-built pages, and re-capture a saved page while keeping its marks.
+ */
 import { findPageByUrl, getPage, patchPage, putSnapshot, savePage } from '../store/repo.ts'
 import type { Page } from '../store/schema.ts'
 import { inspectHtml, sanitize, SANITIZER_VERSION } from './sanitize.ts'
@@ -109,9 +113,6 @@ export async function importUrl(
   return storePage({ html: r.html, url: r.finalUrl, title: '', method, layoutWidth })
 }
 
-export async function pageExists(id: string) {
-  return !!(await getPage(id))
-}
 
 /**
  * Capture a saved page again, keeping its marks (they find their words again). `render` runs the site's scripts first, which fills in

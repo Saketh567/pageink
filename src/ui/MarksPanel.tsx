@@ -1,3 +1,6 @@
+/**
+ * The side panel listing every mark on the page.
+ */
 import { useState } from 'preact/hooks'
 import { MEANINGS, studySheet, tidy, type Meaning } from '../export/study-sheet.ts'
 import { Icon } from './icons.tsx'

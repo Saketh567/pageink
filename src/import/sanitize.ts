@@ -1,8 +1,16 @@
+/**
+ * Turns untrusted page HTML into an inert snapshot: no scripts, frames or forms; images are parked until near the
+ * screen; lazy-image tricks are undone so pictures show without the site's JavaScript.
+ */
 import DOMPurify from 'dompurify'
 
 export const SANITIZER_VERSION = 3
 
 const LAZY: Array<[string, string]> = [['data-src', 'src'], ['data-lazy-src', 'src'], ['data-srcset', 'srcset']]
+/** No scheme (a relative address), http(s), or an image data: URL. Anything else (javascript:, file:, blob:...) is never copied into src. */
+const safeAddress = (v: string) => !/^\s*[a-z][a-z0-9+.-]*:/i.test(v) || /^\s*(https?:|data:image\/)/i.test(v)
+/** A srcset is a list of addresses with sizes; every one of them has to be safe. */
+const safeValue = (to: string, v: string) => (to === 'srcset' ? v.split(',').every((c) => safeAddress(c.trim().split(/\s+/)[0] ?? '')) : safeAddress(v))
 /** More ways sites hide the real image until a script runs. Only images and sources take these. */
 const LAZY_IMG: Array<[string, string]> = [
   ['data-original', 'src'], ['data-lazy', 'src'], ['data-original-src', 'src'], ['data-hi-res-src', 'src'], ['data-image', 'src'],
@@ -61,15 +69,16 @@ export function sanitize(raw: string, baseUrl?: string): string {
     if (!/\b(stylesheet|icon)\b/i.test(l.getAttribute('rel') ?? '')) l.remove()
   })
   for (const [from, to] of LAZY) {
-    doc.querySelectorAll(`[${from}]`).forEach((el) => {
-      el.setAttribute(to, el.getAttribute(from)!)
+    doc.querySelectorAll(`img[${from}], source[${from}]`).forEach((el) => {
+      const v = el.getAttribute(from)!
+      if (safeValue(to, v)) el.setAttribute(to, v)
       el.removeAttribute(from)
     })
   }
   for (const [from, to] of LAZY_IMG) {
     doc.querySelectorAll(`img[${from}], source[${from}]`).forEach((el) => {
-      if (!el.getAttribute(from)) return
-      el.setAttribute(to, el.getAttribute(from)!)
+      const v = el.getAttribute(from)
+      if (v && safeValue(to, v)) el.setAttribute(to, v)
       el.removeAttribute(from)
     })
   }

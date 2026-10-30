@@ -1,3 +1,6 @@
+/**
+ * Undo and redo as a stack of commands that have already been applied.
+ */
 export interface Command { undo(): void; redo(): void }
 
 const CAP = 200

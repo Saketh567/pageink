@@ -1,3 +1,7 @@
+/**
+ * Text selection rules for the Mark tool: grow to whole words, then the sentence, then the paragraph; find the
+ * text under a point.
+ */
 import { offsetOf, rectsOf, textIndex, toRange, type TextIndex } from '../anchor/text-quote.ts'
 
 const BLOCK = 'p,li,blockquote,h1,h2,h3,h4,h5,h6,td,th,dd,dt,figcaption,pre'
@@ -56,7 +60,7 @@ export function caretOffset(doc: Document, x: number, y: number): number | null 
   return node ? offsetOf(textIndex(doc), node, off) : null
 }
 
-export type Scope = 'words' | 'sentence' | 'block'
+type Scope = 'words' | 'sentence' | 'block'
 
 export interface MarkSession {
   /** Drag: move the free end of the selection. */

@@ -1,3 +1,7 @@
+/**
+ * Shows a saved page: a sandboxed iframe, the ink layer and a live canvas, laid out at the screen width, re-laid
+ * out on rotation, with images loaded as they come near.
+ */
 import { clampScale, clientToDoc, zoomScroll, type Pt } from './coords.ts'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'

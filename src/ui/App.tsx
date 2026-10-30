@@ -1,3 +1,7 @@
+/**
+ * The app shell: starts the database and settings, picks the screen from the address (library, reader, settings),
+ * and offers a reload when a new version is ready.
+ */
 import { useEffect, useState } from 'preact/hooks'
 import { migrateToAutoLayout, seedSample, setSetting } from '../store/repo.ts'
 import { loadAppearance, startAppearance } from './appearance.ts'

@@ -1,5 +1,8 @@
+/**
+ * The shapes of everything saved on the device: pages, snapshots, annotations (ink, highlight, note), collections.
+ */
 export type ID = string
-export type ISO = string
+type ISO = string
 
 export interface Rect { x: number; y: number; w: number; h: number }
 
@@ -36,7 +39,7 @@ export interface Collection { id: ID; name: string; color: string; order: number
 
 export interface Snapshot { pageId: ID; html: string; sanitizerVersion: number }
 
-export interface Anchor {
+interface Anchor {
   page: { x: number; y: number }
   element?: { css: string; rx: number; ry: number }
   text?: {

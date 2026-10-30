@@ -71,3 +71,4 @@ Run on the Vercel preview URL (or production), in Safari first, then from the Ho
 - [ ] In Mark mode, tap a FAQ question and a link with your finger: they open without switching to Read. The Pencil still marks.
 - [ ] On a shop page with a carousel: swipe it sideways with a finger; marks on a slide go with it and disappear when the slide does.
 - [ ] On a shop whose products are missing, tap the reload icon (Reload with full rendering) and check the products and their pictures appear.
+- [ ] To get the developer console on the iPad (for debugging only), set `localStorage["pageink.eruda"]="1"` once from Safari, then open the app with `?debug=1`. Without that, `?debug=1` shows only the Pencil log.

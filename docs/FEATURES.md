@@ -19,7 +19,7 @@ Status: **Done** (shipped and tested), **Next** (planned), **Idea** (not committ
 | C11 | Load the full page | Shops and apps that build their content with scripts: the reader's "Reload with full rendering" button loads the page in a real browser (scrolled top to bottom so lazy images load) and replaces the saved copy; marks are kept. | Done |
 
 ## Specifications that apply to every feature
-- Works offline once installed (PWA). Reading never needs a network.
+- The app, your library, page text and marks work offline once installed (PWA). Pictures load from the original site, so offline they show only if cached (saving pictures with the page is on the backlog).
 - Imported pages never run scripts (security). Interactivity is rebuilt by PageInk, not the site.
 - Nothing leaves the device except the page address when importing.
 - Touch targets at least 44 px; every control has an accessible name.
@@ -32,6 +32,7 @@ Status: **Done** (shipped and tested), **Next** (planned), **Idea** (not committ
 | Tab widgets that swap panels (not just open/close) | Pricing tabs, product tabs | Next |
 | Clean read: toggle ink / highlights / notes layers | See the page without marks | Next |
 | First-run tour | Teach pen, mark, margin in 30 seconds | Next |
+| Save pictures with each page (true offline reading)  | Pages look right with no network | Next |
 | Search across all your marks and pages | Find that sentence you highlighted | Idea |
 | Accounts and cloud sync | Same library on every device | Idea (needs a backend) |
 | Export a page with marks as PDF | Share study material | Idea |

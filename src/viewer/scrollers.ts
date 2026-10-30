@@ -1,3 +1,7 @@
+/**
+ * Lets carousels and wide tables inside a page scroll sideways by swipe or wheel, since the page itself never
+ * receives pointer events.
+ */
 import type { Viewer } from './viewer.ts'
 
 /** The nearest box around `el` that scrolls sideways and can still move that way (a carousel, a wide table). */

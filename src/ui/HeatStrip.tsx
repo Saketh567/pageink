@@ -1,3 +1,6 @@
+/**
+ * A thin strip beside the page with a tick per mark; tap one to jump to it.
+ */
 import { activeViewer, marks, marksApi, viewTick } from './state.ts'
 
 /**

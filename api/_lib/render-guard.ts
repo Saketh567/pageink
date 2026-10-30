@@ -1,3 +1,7 @@
+/**
+ * Decides which requests the headless browser may make while rendering a page, so a page cannot make it reach
+ * internal networks. Every request is re-checked, with a short DNS cache.
+ */
 import { lookup as dnsLookup } from 'node:dns/promises'
 import { isPrivateIp, validateTarget } from './guard.ts'
 
@@ -24,7 +28,7 @@ export function createRequestGuard(lookup: Lookup = (h) => dnsLookup(h, { all: t
       const addrs = await lookup(host)
       ok = addrs.length > 0 && !addrs.some((a) => isPrivateIp(a.address))
     } catch { /* unresolvable host: block */ }
-    cache.set(host, { ok, until: now() + 60_000 })
+    cache.set(host, { ok, until: now() + 5_000 }) // short: the pin proxy re-checks every connection anyway
     return ok
   }
 }

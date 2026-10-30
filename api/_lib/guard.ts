@@ -1,3 +1,7 @@
+/**
+ * First line of defence against SSRF: only public http(s) addresses may be fetched. Rejects private, loopback,
+ * link-local and other internal addresses, including tricky spellings of them.
+ */
 import { isIP } from 'node:net'
 
 export type GuardResult = { ok: true; url: URL } | { ok: false; code: 'BAD_URL' | 'BLOCKED_HOST' }

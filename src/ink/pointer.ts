@@ -1,7 +1,11 @@
+/**
+ * Input routing: the Pencil (or a mouse) draws, a finger scrolls and taps. Also two-finger tap for undo and
+ * three-finger tap for redo.
+ */
 import type { Viewer } from '../viewer/viewer.ts'
 import type { InkPoint } from './stroke.ts'
 
-export interface InkHandler {
+interface InkHandler {
   down(p: InkPoint): void
   move(points: InkPoint[], predicted: InkPoint[]): void
   end(): void

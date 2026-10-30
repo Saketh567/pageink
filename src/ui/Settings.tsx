@@ -1,5 +1,8 @@
+/**
+ * Settings: appearance, defaults, backup and restore.
+ */
 import { useEffect, useState } from 'preact/hooks'
-import { parseBackup, restoreBackup, saveBackup } from '../store/backup.ts'
+import { MAX_BACKUP_BYTES, parseBackup, restoreBackup, saveBackup } from '../store/backup.ts'
 import { getSetting } from '../store/repo.ts'
 import { setPref } from './appearance.ts'
 import { accent, ACCENTS, appKey, defaultWidth, density, drawWithFinger, go, sort, theme, view, WIDTHS, type Density, type Theme, type Width } from './state.ts'
@@ -41,6 +44,7 @@ function DataCard() {
   }
   async function restore(file: File) {
     try {
+      if (file.size > MAX_BACKUP_BYTES) throw new Error('This file is too large to be a PageInk backup.')
       const r = await restoreBackup(parseBackup(await file.text()))
       setMsg({ ok: true, text: `Restored ${plural(r.pages, 'page')}, ${plural(r.annotations, 'mark')} and ${plural(r.collections, 'collection')}. Nothing you already had was replaced with older data.` })
     } catch (e) {

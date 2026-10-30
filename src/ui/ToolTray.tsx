@@ -1,3 +1,6 @@
+/**
+ * The floating toolbar: Mark/Read switch, tools, colours, sizes, undo, and page actions.
+ */
 import { useState } from 'preact/hooks'
 import { MEANINGS } from '../export/study-sheet.ts'
 import { revealHidden } from '../viewer/widgets.ts'

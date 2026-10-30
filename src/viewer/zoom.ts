@@ -1,3 +1,6 @@
+/**
+ * Pinch zoom of the page content (iPad gesture events, trackpad pinch elsewhere).
+ */
 import type { Viewer } from './viewer.ts'
 
 interface WebKitGesture extends Event { scale: number; clientX: number; clientY: number }

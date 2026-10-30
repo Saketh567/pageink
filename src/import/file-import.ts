@@ -1,3 +1,6 @@
+/**
+ * Imports a saved .html file from the device (no address, so no link following).
+ */
 import type { Page } from '../store/schema.ts'
 import { storePage } from './import-url.ts'
 

@@ -1,3 +1,7 @@
+/**
+ * The IndexedDB database (pages, snapshots, annotations, blobs, settings, collections) and its versioned upgrades.
+ * Upgrades must never delete user data.
+ */
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { Annotation, Collection, Page, Snapshot } from './schema.ts'
 

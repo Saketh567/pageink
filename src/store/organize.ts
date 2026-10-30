@@ -1,3 +1,6 @@
+/**
+ * Library organisation: filtering by search, collection and tag, and the sort orders.
+ */
 import type { Page } from './schema.ts'
 
 export type Row = Page & { notes: number }

@@ -1,3 +1,6 @@
+/**
+ * The home screen: import by address or file, search, sort, collections, and the grid or list of saved pages.
+ */
 import { useEffect, useState } from 'preact/hooks'
 import { importFile } from '../import/file-import.ts'
 import { importUrl } from '../import/import-url.ts'

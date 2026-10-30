@@ -155,3 +155,23 @@ describe('images that a site only shows once a script runs', () => {
     expect(out('<img id="i" src="/i.jpg">').getElementById('i')!.getAttribute('decoding')).toBe('async')
   })
 })
+
+describe('lazy-image attributes cannot smuggle unsafe addresses', () => {
+  const out = (html: string) => new DOMParser().parseFromString(sanitize(html, 'https://shop.example/'), 'text/html')
+
+  test('javascript:, file: and blob: addresses are dropped, relative and https ones kept', () => {
+    const d = out('<img id="a" data-src="javascript:alert(1)"><img id="b" data-src="file:///etc/passwd"><img id="c" data-src="images/c.jpg"><img id="d" data-original="blob:https://x/1"><img id="e" data-srcset="https://x/e.jpg 1x, javascript:evil 2x">')
+    const get = (id: string) => d.getElementById(id)!.dataset
+    expect(get('a').pkSrc).toBeUndefined()
+    expect(get('b').pkSrc).toBeUndefined()
+    expect(get('c').pkSrc).toBe('images/c.jpg')
+    expect(get('d').pkSrc).toBeUndefined()
+    expect(get('e').pkSrcset).toBeUndefined() // one unsafe candidate rejects the whole list
+  })
+
+  test('data-src on anything other than an image or source is ignored', () => {
+    const d = out('<video id="v" data-src="https://x/v.mp4"></video><div id="x" data-src="https://x/x.jpg"></div>')
+    expect(d.getElementById('v')!.getAttribute('src')).toBeNull()
+    expect(d.getElementById('x')!.getAttribute('src')).toBeNull()
+  })
+})

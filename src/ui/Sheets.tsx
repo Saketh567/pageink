@@ -1,3 +1,6 @@
+/**
+ * Bottom sheets for page options and for creating or editing a collection.
+ */
 import type { ComponentChildren } from 'preact'
 import { useState } from 'preact/hooks'
 import { normalizeTags, type Row } from '../store/organize.ts'
@@ -6,7 +9,7 @@ import type { Collection } from '../store/schema.ts'
 import { Icon } from './icons.tsx'
 import { ACCENTS, WIDTHS } from './state.ts'
 
-export function Sheet({ title, onClose, children }: { title: string; onClose(): void; children: ComponentChildren }) {
+function Sheet({ title, onClose, children }: { title: string; onClose(): void; children: ComponentChildren }) {
   return (
     <div class="sheet-backdrop" onClick={onClose}>
       <div class="sheet" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
@@ -90,7 +93,7 @@ export function PageSheet({ row, collections, onChanged, onClose }: PageSheetPro
         <button class="btn" aria-pressed={pinned} onClick={() => { setPinned(!pinned); void save({ pinned: !pinned }) }}>
           <Icon name="star" />{pinned ? 'Pinned' : 'Pin to top'}
         </button>
-        {row.url && <a class="btn" href={row.url} target="_blank" rel="noopener noreferrer"><Icon name="link" />Open original</a>}
+        {/^https?:\/\//i.test(row.url) && <a class="btn" href={row.url} target="_blank" rel="noopener noreferrer"><Icon name="link" />Open original</a>}
         <button class="btn danger" onClick={() => {
           if (confirm(`Delete “${row.title}” and all its marks?`)) void deletePage(row.id).then(() => { onChanged(); onClose() })
         }}>Delete</button>

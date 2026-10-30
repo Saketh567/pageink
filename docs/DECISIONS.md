@@ -72,7 +72,7 @@ User feedback: imported pages did not feel like the original site: tiny desktop 
 
 ## Hosting lessons, backup and restore
 
-- **Vercel was connected to the wrong repository.** The project `pageink1` was watching a separate private repo `Saketh567/pageink1` (first commit "Initial commit"), so nothing pushed to `Saketh567/pageink` ever deployed. Fixed by reconnecting Settings, Git to `Saketh567/pageink`. Check which commit is live at any time: `https://pageink1.vercel.app/api/health` returns `{ok, keyConfigured, commit}`, and Settings shows "PageInk build <commit>".
+- **Vercel was connected to the wrong repository.** The project `pageink1` was watching a separate private repo `Saketh567/pageink1` (first commit "Initial commit"), so nothing pushed to `Saketh567/pageink` ever deployed. Fixed by reconnecting Settings, Git to `Saketh567/pageink`. Check which commit is live at any time: `https://pageink1.vercel.app/api/health` returns `{ok, commit}`, and Settings shows "PageInk build <commit>".
 - **Visitors never need a Vercel login** on `pageink1.vercel.app` (public). Vercel Authentication ("Deployment Protection") locks the long branch and per-deployment addresses (`pageink1-git-main-...`, `...-git-phase-2-...`); set it to Disabled in Settings, Deployment Protection to make every address public. Share only the short address.
 - **Where data lives:** IndexedDB in the browser on one device and one web address (the localhost copy and the Vercel site have separate libraries). No accounts, no server copy. Safari can clear a site's data after a long idle spell unless the app is on the Home Screen (the app asks for persistent storage when installed).
 - **Backup and restore** (Settings, Your data): one `pageink-YYYY-MM-DD.pageink.json` with pages, page copies, marks and collections, handed to the share sheet (Save to Files, iCloud Drive, AirDrop) or downloaded. Restore **merges**: records that are missing or newer are added, nothing is deleted or replaced by older data. The file is untrusted input: it is validated whole (a bad file changes nothing) and every page copy is sanitized again. Known limit: pin and tag edits do not change a page's `updatedAt`, so they only come back onto a page that is missing. Settings are not part of the backup.
@@ -81,3 +81,11 @@ User feedback: imported pages did not feel like the original site: tiny desktop 
 
 ## Dropdowns, FAQs and multi-page sites
 Saved copies cannot run site scripts, so PageInk opens and closes hidden content itself (src/viewer/widgets.ts): tap a header, or "Expand all sections". Same-site links import and open directly, with a Back chip; other sites ask first. Importing an address you already have reuses the saved copy.
+
+## Security hardening (after the first audit)
+
+- **The headless browser resolves nothing itself.** It is launched with `--proxy-server` pointing at a loopback proxy in the same function (`api/_lib/pin-proxy.ts`) that resolves each host, refuses non-public addresses and odd ports, and connects to the address it checked. This closes the DNS-rebinding gap that a per-request URL check leaves, and covers redirects and subresources. Chromium's `--disable-web-security` and `--disable-site-isolation-trials` flags are removed.
+- **`/api/health` no longer says whether a key is configured.** It returns only `{ok, commit}`; the commit is public anyway.
+- **Referrer-Policy is `no-referrer`.** It stops sites learning which page you were on, and many image hosts accept an empty referrer while rejecting a foreign one.
+- **`base-uri` still allows http(s).** The snapshot's `<base>` needs it (the snapshot inherits the app's policy). Accepted because injecting markup into the app document is already blocked by `script-src 'self'`.
+- **Not done, and why:** a shared rate limiter and a bot check (Upstash, Turnstile) need accounts only the owner can create; separate-origin snapshots are a larger redesign; `puppeteer-core` is not upgraded until it can be tested with a matching Chrome build. All three are listed in SECURITY.md.

@@ -1,3 +1,6 @@
+/**
+ * Taps inside a saved page: open or close dropdowns and FAQs, scroll to anchors, and report links to other pages.
+ */
 import type { Viewer } from './viewer.ts'
 import { toggleAt } from './widgets.ts'
 

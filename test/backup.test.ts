@@ -82,6 +82,33 @@ describe('parseBackup rejects bad files whole', () => {
     expect(() => parseBackup(text)).toThrow('not a PageInk backup')
   })
 
+  test.each([
+    ['a javascript: address', { url: 'javascript:alert(1)' }],
+    ['a data: address', { url: 'data:text/html,<b>x</b>' }],
+    ['an address that is not an address', { url: '::bad' }],
+  ])('rejects a page with %s', (_n, patch) => {
+    expect(() => parseBackup(JSON.stringify(file({ pages: [{ ...page('p'), ...patch } as Page] })))).toThrow('not a PageInk backup')
+  })
+
+  test('rejects an annotation of an unknown kind or without a spot on the page', () => {
+    expect(() => parseBackup(JSON.stringify(file({ annotations: [{ ...ann('a', 'p'), kind: 'script' } as unknown as Annotation] })))).toThrow('not a PageInk backup')
+    expect(() => parseBackup(JSON.stringify(file({ annotations: [{ ...ann('a', 'p'), anchor: {} } as unknown as Annotation] })))).toThrow('not a PageInk backup')
+  })
+
+  test('derives the origin from the address instead of trusting the file, drops a bad cover, and caps long text', () => {
+    const p = { ...page('p'), url: 'https://shop.example/a?b=1', siteOrigin: 'https://evil.example', cover: 'javascript:x', title: 'T'.repeat(900), captureMethod: 'weird' } as unknown as Page
+    const got = parseBackup(JSON.stringify(file({ pages: [p] }))).pages[0]
+    expect(got.siteOrigin).toBe('https://shop.example')
+    expect(got.cover).toBeUndefined()
+    expect(got.title).toHaveLength(500)
+    expect(got.captureMethod).toBe('file')
+  })
+
+  test('rejects a copy that is far too large', () => {
+    const big = { pageId: 'p', html: 'x'.repeat(8_000_001), sanitizerVersion: 1 }
+    expect(() => parseBackup(JSON.stringify({ ...file({ pages: [page('p')] }), snapshots: [big] }))).toThrow('not a PageInk backup')
+  })
+
   test('a backup from a newer version says so', () => {
     expect(() => parseBackup(JSON.stringify({ ...file({}), version: 2 }))).toThrow('newer version')
   })

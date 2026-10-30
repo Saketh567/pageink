@@ -1,3 +1,6 @@
+/**
+ * The floating editor for a note.
+ */
 import { useEffect, useRef } from 'preact/hooks'
 import { MEANINGS } from '../export/study-sheet.ts'
 import { activeViewer, marks, marksApi, openNote, viewTick } from './state.ts'

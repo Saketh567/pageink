@@ -1,3 +1,7 @@
+/**
+ * Draws saved annotations as SVG over the page and keeps them with their content as layout changes, carousels
+ * scroll or sections open. Marks inside a scrolling box are clipped to it.
+ */
 import { resolveAnnotation, type Resolved } from '../anchor/anchor.ts'
 import { clipOf } from '../anchor/clip.ts'
 import { elementPoint, resolve as resolveCss } from '../anchor/css-selector.ts'

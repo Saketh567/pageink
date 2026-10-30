@@ -3,7 +3,7 @@
  * them, so it still finds its place if the page is re-captured or reflowed.
  */
 export interface TextIndex { text: string; nodes: Array<{ node: Text; start: number; end: number }> }
-export interface Quote { exact: string; prefix: string; suffix: string }
+interface Quote { exact: string; prefix: string; suffix: string }
 export interface TextSelector { quote: Quote; position: { start: number; end: number } }
 
 const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE'])

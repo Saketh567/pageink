@@ -1,10 +1,13 @@
+/**
+ * Applies theme, accent colour and density to the page, following the system theme when set to Auto.
+ */
 import { effect } from '@preact/signals'
 import { getSetting, setSetting } from '../store/repo.ts'
 import { accent, density, sort, theme, view, type Density, type Theme } from './state.ts'
 import type { Sort } from '../store/organize.ts'
 
 /** Readable text colour for a given background: dark ink on light accents, white on dark ones. */
-export function inkFor(hex: string): string {
+function inkFor(hex: string): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex)
   if (!m) return '#fff'
   const n = parseInt(m[1], 16)

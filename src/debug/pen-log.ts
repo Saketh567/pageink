@@ -1,7 +1,12 @@
-/** ?debug=1: on-screen pointer log (type, pressure, tilt, coalesced/predicted counts, Hz) plus the eruda console. */
+/**
+ * ?debug=1: on-screen pointer log (type, pressure, tilt, coalesced/predicted counts, Hz). The eruda console is loaded only on a device where
+ * localStorage 'pageink.eruda' is '1', so a link with ?debug=1 sent to someone cannot open a console in their app.
+ */
 export function enablePenLog() {
   if (new URLSearchParams(location.search).get('debug') !== '1') return
-  void import('eruda').then((m) => m.default.init())
+  try {
+    if (localStorage.getItem('pageink.eruda') === '1') void import('eruda').then((m) => m.default.init())
+  } catch { /* storage blocked: no console, the log still works */ }
 
   const box = document.createElement('pre')
   box.setAttribute('aria-hidden', 'true')

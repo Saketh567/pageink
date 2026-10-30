@@ -1,3 +1,6 @@
+/**
+ * Hit test for the eraser: does a circle at a point touch a stroke.
+ */
 import type { Annotation } from '../store/schema.ts'
 import { absPoints } from './stroke.ts'
 

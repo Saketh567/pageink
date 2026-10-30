@@ -18,7 +18,7 @@ function isHidden(el: Element): boolean {
   return !!(el as HTMLElement).hidden || s.display === 'none' || s.visibility === 'hidden' || s.maxHeight === '0px' || (parseFloat(s.height) === 0 && s.overflow !== 'visible')
 }
 
-export function showPanel(el: HTMLElement) {
+function showPanel(el: HTMLElement) {
   if (!el.dataset.pkPrev) el.dataset.pkPrev = JSON.stringify(FORCE_SHOWN.map(([k]) => el.style.getPropertyValue(k)))
   el.hidden = false
   el.removeAttribute('aria-hidden')
@@ -26,7 +26,7 @@ export function showPanel(el: HTMLElement) {
   for (const [k, v] of FORCE_SHOWN) el.style.setProperty(k, v, 'important')
 }
 
-export function hidePanel(el: HTMLElement) {
+function hidePanel(el: HTMLElement) {
   delete el.dataset.pkShown
   const prev: string[] = JSON.parse(el.dataset.pkPrev ?? '[]')
   FORCE_SHOWN.forEach(([k], i) => (prev[i] ? el.style.setProperty(k, prev[i]) : el.style.removeProperty(k))) // give back the page's own styles

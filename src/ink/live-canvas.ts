@@ -1,3 +1,6 @@
+/**
+ * A canvas that shows the stroke being drawn right now; finished ink becomes SVG (iOS limits canvas size).
+ */
 import type { Viewer } from '../viewer/viewer.ts'
 import { outlinePath, type InkPoint } from './stroke.ts'
 import type { Stroke } from '../store/schema.ts'

@@ -1,7 +1,11 @@
+/**
+ * All reads and writes of the library, in one place: pages, snapshots, annotations, collections, settings, plus
+ * the one-time migrations.
+ */
 import { getDb } from './db.ts'
 import type { Annotation, Collection, ID, Page, Snapshot } from './schema.ts'
 
-export const SAMPLE_ID = 'sample'
+const SAMPLE_ID = 'sample'
 
 export async function savePage(p: Page) {
   await (await getDb()).put('pages', p)

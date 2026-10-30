@@ -1,3 +1,7 @@
+/**
+ * Connects drawing, marking and notes to the page: turns pen and pointer input into saved annotations, undo/redo,
+ * the spotlight, and the lists the panels show.
+ */
 import { effect } from '@preact/signals'
 import { elementAnchor, resolve as resolveCss, selectorFor } from '../anchor/css-selector.ts'
 import { describe as describeText, textIndex } from '../anchor/text-quote.ts'

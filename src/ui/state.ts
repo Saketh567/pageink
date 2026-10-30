@@ -1,3 +1,6 @@
+/**
+ * Shared app state as signals: route, tools, colours, theme, panels and the pieces the reader and toolbar share.
+ */
 import { signal } from '@preact/signals'
 import type { Mark, Meaning } from '../export/study-sheet.ts'
 import type { Sort } from '../store/organize.ts'

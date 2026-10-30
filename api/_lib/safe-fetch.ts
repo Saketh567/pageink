@@ -1,3 +1,7 @@
+/**
+ * Downloads a page for import: public addresses only, redirects re-checked at every hop, the validated IP pinned
+ * for the connection (defeats DNS rebinding), a size cap and a timeout.
+ */
 import { lookup as dnsLookup } from 'node:dns/promises'
 import { Agent, fetch as undiciFetch } from 'undici'
 import { isPrivateIp, validateTarget } from './guard.ts'
@@ -31,6 +35,7 @@ const defaultLookup = (host: string) => dnsLookup(host, { all: true })
 /** Connects through an undici Agent whose DNS answer is the address we already validated (defeats rebinding). */
 const defaultRequest: NonNullable<SafeFetchDeps['request']> = async (url, { address, family, signal, headers }) => {
   const dispatcher = new Agent({
+    keepAliveTimeout: 1, // this agent serves one request, so do not hold its socket open
     connect: {
       lookup: (_h, opts, cb) => {
         if ((opts as { all?: boolean }).all) (cb as unknown as (e: null, a: unknown) => void)(null, [{ address, family }])
@@ -63,7 +68,7 @@ export async function safeFetch(rawUrl: string, deps: SafeFetchDeps = {}): Promi
       res = await request(v.url.href, { ...addrs[0], signal, headers: { 'user-agent': UA, accept: 'text/html,application/xhtml+xml' } })
     } catch (e) {
       if (signal.aborted) throw new FetchError('TIMEOUT')
-      throw new FetchError('UPSTREAM_502', e instanceof Error ? e.message : 'fetch failed')
+      throw new FetchError('UPSTREAM_502', 'fetch failed') // never echo the network error: it would tell a caller what an address does
     }
 
     const loc = res.headers.get('location')

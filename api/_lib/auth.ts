@@ -1,3 +1,7 @@
+/**
+ * Who may call the API: requests from the PageInk app itself (same origin) or, if the owner set APP_KEY, with that
+ * key. Also finds the visitor's address for rate limits.
+ */
 import { createHash, timingSafeEqual } from 'node:crypto'
 
 const digest = (s: string) => createHash('sha256').update(s).digest()

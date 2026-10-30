@@ -17,6 +17,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = typeof req.body?.url === 'string' ? req.body.url : ''
   try {
     const r = await safeFetch(url)
+    if (r.html.length > 4_300_000) return fail(res, 413, 'TOO_LARGE', 'TOO_LARGE') // Vercel refuses responses over 4.5 MB
     res.status(200).json({ ...r, fetchedAt: new Date().toISOString() })
   } catch (e) {
     if (e instanceof FetchError) {

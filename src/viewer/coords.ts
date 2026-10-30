@@ -1,3 +1,6 @@
+/**
+ * Coordinate maths between the screen and the page, and zoom limits.
+ */
 export interface Pt { x: number; y: number }
 
 /** Stored geometry lives in document space: CSS px of the snapshot at its layoutWidth. */

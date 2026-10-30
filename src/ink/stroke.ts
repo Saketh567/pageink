@@ -1,3 +1,6 @@
+/**
+ * Turns pen points into smooth, pressure-aware stroke outlines (perfect-freehand) and back into points.
+ */
 import { getStroke } from 'perfect-freehand'
 import type { Annotation, Rect, Stroke } from '../store/schema.ts'
 

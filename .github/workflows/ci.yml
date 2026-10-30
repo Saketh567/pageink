@@ -1,14 +1,18 @@
 name: CI
 on: [push, pull_request]
+# the workflow only reads the repository; it never needs to write to it
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: lts/*, cache: npm }
+        with: { node-version: 22, cache: npm }
       - run: npm ci
       - run: npm run lint
+      - run: npm audit --omit=dev --audit-level=critical
       - run: npm test
       - run: npx playwright install --with-deps webkit chromium
       - run: npm run build
