@@ -30,7 +30,7 @@ export function startAppearance() {
 }
 
 export async function loadAppearance() {
-  theme.value = (await getSetting<Theme>('theme')) ?? 'auto'
+  theme.value = (await getSetting<Theme>('theme')) ?? 'paper'
   accent.value = (await getSetting<string>('accent')) ?? accent.value
   density.value = (await getSetting<Density>('density')) ?? 'comfortable'
   view.value = (await getSetting<'grid' | 'list'>('view')) ?? 'grid'

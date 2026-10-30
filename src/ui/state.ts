@@ -39,7 +39,7 @@ export const go = (path: string) => { location.hash = path }
 export type Theme = 'auto' | 'dark' | 'light' | 'paper'
 export type Density = 'comfortable' | 'compact'
 export const ACCENTS = ['#0a84ff', '#5e5ce6', '#bf5af2', '#ff2d55', '#ff9500', '#ffcc00', '#34c759', '#30b0c7']
-export const theme = signal<Theme>('auto')
+export const theme = signal<Theme>('paper')
 export const accent = signal(ACCENTS[0])
 export const density = signal<Density>('comfortable')
 export const view = signal<'grid' | 'list'>('grid')
