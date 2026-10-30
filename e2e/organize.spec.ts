@@ -26,7 +26,8 @@ async function seed(page: Page) {
   }
 }
 
-const titles = (page: Page) => page.locator('.pagecard .ptitle').allTextContents()
+// locator, not a snapshot of text: assertions on it retry until the screen has updated (slow CI machines)
+const cards = (page: Page) => page.locator('.pagecard .ptitle')
 const options = (page: Page, name: string) => page.getByRole('button', { name: `Options for ${name}` })
 
 async function newCollection(page: Page, name: string) {
@@ -43,14 +44,14 @@ test('collections: create, file a page, filter, then delete keeps the page', asy
   await page.getByRole('button', { name: 'Done' }).click()
 
   await page.locator('.nav', { hasText: 'Work' }).click()
-  expect(await titles(page)).toEqual(['Alpha Guide'])
+  await expect(cards(page)).toHaveText(['Alpha Guide'])
   await expect(page.locator('.nav', { hasText: 'Unsorted' }).locator('.count')).toHaveText('3') // beta, gamma, sample
 
   await page.getByRole('button', { name: 'Edit collection Work' }).click({ force: true })
   page.once('dialog', (d) => void d.accept())
   await page.getByRole('button', { name: 'Delete' }).click()
   await page.locator('.nav', { hasText: 'All pages' }).click()
-  expect(await titles(page)).toContain('Alpha Guide')
+  await expect(cards(page).filter({ hasText: 'Alpha Guide' })).toHaveCount(1)
   await expect(page.locator('.nav', { hasText: 'Work' })).toHaveCount(0)
 })
 
@@ -62,13 +63,13 @@ test('tags and search narrow the library, and empty results say so', async ({ pa
   await page.getByRole('button', { name: 'Done' }).click()
 
   await page.locator('.tagcloud .chip', { hasText: '#design' }).click()
-  expect(await titles(page)).toEqual(['Beta Notes'])
+  await expect(cards(page)).toHaveText(['Beta Notes'])
   await page.getByRole('button', { name: 'Clear tag design' }).click()
 
   await page.getByLabel('Search').fill('gamma')
-  expect(await titles(page)).toEqual(['Gamma Docs'])
+  await expect(cards(page)).toHaveText(['Gamma Docs'])
   await page.getByLabel('Search').fill('ux') // tag text is searchable
-  expect(await titles(page)).toEqual(['Beta Notes'])
+  await expect(cards(page)).toHaveText(['Beta Notes'])
   await page.getByLabel('Search').fill('no such thing')
   await expect(page.getByText('Nothing matches')).toBeVisible()
 })
@@ -76,11 +77,11 @@ test('tags and search narrow the library, and empty results say so', async ({ pa
 test('pinned pages come first and the sort order changes the list', async ({ page }) => {
   await seed(page)
   await page.getByRole('button', { name: 'Pin Gamma Docs' }).click()
-  expect((await titles(page))[0]).toBe('Gamma Docs')
+  await expect(cards(page).first()).toHaveText('Gamma Docs')
   await page.getByLabel('Sort').selectOption('name')
-  expect(await titles(page)).toEqual(['Gamma Docs', 'Alpha Guide', 'Beta Notes', 'How a web page works (sample)']) // pinned first, then A to Z
+  await expect(cards(page)).toHaveText(['Gamma Docs', 'Alpha Guide', 'Beta Notes', 'How a web page works (sample)']) // pinned first, then A to Z
   await page.locator('.nav', { hasText: 'Pinned' }).click()
-  expect(await titles(page)).toEqual(['Gamma Docs'])
+  await expect(cards(page)).toHaveText(['Gamma Docs'])
 })
 
 test('layout, sort, theme and accent persist across a reload', async ({ page }) => {
