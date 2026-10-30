@@ -143,3 +143,31 @@ test('pictures that a site loads with its own script still appear', async ({ pag
   }
   expect(await f.locator('#c').evaluate((e) => getComputedStyle(e).backgroundImage)).toContain('c.png')
 })
+
+test('marks on a carousel slide go with it when the carousel scrolls sideways', async ({ page }) => {
+  const slide = (id: string, text: string) => `<div style="flex:0 0 400px;padding:20px;box-sizing:border-box"><p id="${id}" style="margin:0;font:22px Georgia">${text}</p></div>`
+  const html = `<!doctype html><title>Carousel</title><body style="margin:0"><h1>Shoes</h1>
+    <div id="rail" style="display:flex;width:400px;overflow-x:auto;scrollbar-width:none">${slide('one', 'First shoe: the classic leather runner in white.')}${slide('two', 'Second shoe: the lightweight trail model in green.')}</div>
+    ${'<p style="margin:0 0 12px">Filler paragraph so the page is long enough to scroll properly.</p>'.repeat(20)}</body>`
+  await page.setViewportSize({ width: 820, height: 1180 })
+  await page.goto('/')
+  await page.locator('input[type=file]').setInputFiles({ name: 'rail.html', mimeType: 'text/html', buffer: Buffer.from(html) })
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
+  await page.getByRole('button', { name: 'Mark text' }).click()
+  const box = (await frame(page).locator('#one').boundingBox())!
+  await page.mouse.move(box.x + 20, box.y + 12)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 120, box.y + 12, { steps: 8 })
+  await page.mouse.up()
+  const marks = page.locator('svg.viewer-ink g[data-layer=highlights] > g')
+  await expect(marks).toHaveCount(1)
+
+  await page.mouse.move(box.x + 100, box.y + 10)
+  await page.mouse.wheel(400, 0) // sideways over the carousel
+  await expect.poll(() => frame(page).locator('#rail').evaluate((e) => e.scrollLeft)).toBeGreaterThan(300)
+  await expect(marks).toHaveCount(0) // slide one is out of sight, so is its highlight
+
+  await page.mouse.wheel(-400, 0)
+  await expect.poll(() => frame(page).locator('#rail').evaluate((e) => e.scrollLeft)).toBe(0)
+  await expect(marks).toHaveCount(1)
+})

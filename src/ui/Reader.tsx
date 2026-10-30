@@ -5,6 +5,7 @@ import { sanitize, SANITIZER_VERSION } from '../import/sanitize.ts'
 import { importUrl } from '../import/import-url.ts'
 import { findPageByUrl, getPage, getSnapshot, getSetting, listAnnotations, patchPage, putSnapshot, savePage, setSetting } from '../store/repo.ts'
 import { attachLinkTaps, type LinkTap } from '../viewer/links.ts'
+import { attachSideScroll } from '../viewer/scrollers.ts'
 import { revealHidden } from '../viewer/widgets.ts'
 import { createViewer } from '../viewer/viewer.ts'
 import { HeatStrip } from './HeatStrip.tsx'
@@ -56,6 +57,7 @@ export function Reader({ pageId }: { pageId: string }) {
       }
       // a finger always browses; the Pencil (or a mouse) marks unless Read mode is on
       attachLinkTaps(viewer, (e) => mode.value === 'read' || (e.pointerType === 'touch' && !drawWithFinger.value), (l) => (sameSite(l.href) ? void followLink(l.href, page.id, page.layoutWidth) : setLink(l)))
+      const stopSide = attachSideScroll(viewer, () => !(mode.value === 'markup' && drawWithFinger.value))
       void patchPage(page.id, { openedAt: new Date().toISOString() })
       void setSetting('lastPage', page.id) // the library offers to continue here
       void getSetting('hintSeen').then((seen) => {
@@ -87,6 +89,7 @@ export function Reader({ pageId }: { pageId: string }) {
         viewer.container.removeEventListener('scroll', onScroll)
         stopSave()
         stopLane()
+        stopSide()
         editor.destroy()
         viewer.destroy()
         activeViewer.value = null

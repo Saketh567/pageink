@@ -1,4 +1,5 @@
 import { resolveAnnotation, type Resolved } from '../anchor/anchor.ts'
+import { clipOf } from '../anchor/clip.ts'
 import { elementPoint, resolve as resolveCss } from '../anchor/css-selector.ts'
 import type { Mark } from '../export/study-sheet.ts'
 import type { Annotation, Rect } from '../store/schema.ts'
@@ -18,6 +19,7 @@ export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => 
   const nodes = new Map<string, SVGElement>()
   const resolved = new Map<string, Resolved>()
   const groups = new Map<string, SVGGElement>()
+  const clips = new Map<string, SVGElement>()
   let doc: Document | null = null
   let liveGroup: SVGGElement | null = null
   let spot: SVGPathElement | null = null
@@ -59,7 +61,30 @@ export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => 
     return Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 ? { dx: 0, dy: 0 } : { dx, dy }
   }
 
-  const drop = (key: string) => { nodes.get(key)?.remove(); nodes.delete(key) }
+  const drop = (key: string) => {
+    nodes.get(key)?.remove()
+    nodes.delete(key)
+    clips.get(key)?.remove()
+    clips.delete(key)
+  }
+
+  /**
+   * Marks on something inside a scrolling box (a carousel) are cut off at the box's edge, and vanish when their picture is scrolled
+   * out of sight. Returns 'hidden', or the id of the clip to apply, or nothing. `at` is the offset the marked shape is drawn with.
+   */
+  function clipFor(a: Annotation, el: Element | null | undefined, at = { dx: 0, dy: 0 }): 'hidden' | string | undefined {
+    const c = clipOf(el ?? null)
+    if (!c) return undefined
+    if (c === 'hidden') return 'hidden'
+    let defs = svg.querySelector('defs')
+    if (!defs) defs = svg.insertBefore(make('defs'), svg.firstChild)
+    const id = 'pkc-' + a.id
+    const cp = make('clipPath', { id, clipPathUnits: 'userSpaceOnUse' }, defs)
+    make('rect', { x: c.x - at.dx, y: c.y - at.dy, width: c.w, height: c.h }, cp)
+    clips.set(a.id, cp)
+    return id
+  }
+  const anchorEl = (a: Annotation) => (doc && a.anchor.element ? resolveCss(a.anchor.element.css, doc) : null)
 
   function paintRects(a: Annotation, parent: SVGGElement, r: Resolved) {
     const g = make('g', {}, parent)
@@ -105,10 +130,13 @@ export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => 
     drop(a.id + ':leader')
     if (a.deleted) return
     if (a.kind === 'ink' && a.ink) {
+      const o = inkOffset(a)
+      const cut = a.lane === 'margin' ? undefined : clipFor(a, anchorEl(a), o)
+      if (cut === 'hidden') return
       const g = group(a.layer)
       const path = make('path', { d: a.ink.path ?? outlinePath(absPoints(a), a.ink.tool, a.ink.size), fill: a.color }, g)
       path.dataset.id = a.id
-      const o = inkOffset(a)
+      if (cut) path.setAttribute('clip-path', `url(#${cut})`)
       if (o.dx || o.dy) path.setAttribute('transform', `translate(${o.dx} ${o.dy})`)
       if (a.ink.tool === 'highlighter') {
         path.style.opacity = '0.35'
@@ -118,9 +146,16 @@ export function createInkLayer(svg: SVGSVGElement, onChange: (ids: string[]) => 
       if (a.lane === 'margin') paintLeader(a, g)
     } else if (a.kind === 'highlight') {
       const r = resolved.get(a.id) ?? { rects: a.highlight?.rects ?? [], point: a.anchor.page, orphaned: false }
+      const cut = clipFor(a, r.el)
+      if (cut === 'hidden') return
       paintRects(a, group('highlights'), r)
+      if (cut) nodes.get(a.id)?.setAttribute('clip-path', `url(#${cut})`)
     } else if (a.kind === 'note') {
-      paintPin(a, group('notes'), resolved.get(a.id) ?? { rects: [], point: a.anchor.page, orphaned: false })
+      const r = resolved.get(a.id) ?? { rects: [], point: a.anchor.page, orphaned: false }
+      const cut = clipFor(a, r.el, { dx: r.point.x, dy: r.point.y })
+      if (cut === 'hidden') return
+      paintPin(a, group('notes'), r)
+      if (cut) nodes.get(a.id)?.setAttribute('clip-path', `url(#${cut})`)
     }
   }
 

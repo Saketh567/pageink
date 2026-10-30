@@ -27,6 +27,8 @@ export interface Viewer {
   setLane(on: boolean): void
   /** Lay the page out again now (after something was opened or closed in it). */
   remeasure(): void
+  /** Something inside the page moved (a carousel scrolled): marks sitting on it have to be found again. */
+  follow(): void
   /** Called whenever the page is laid out again: a new width, late fonts or images can all move text. */
   onLayout(cb: () => void): void
   setScale(s: number, focusClient?: Pt): void
@@ -161,6 +163,7 @@ export async function createViewer(host: HTMLElement, html: string, requestedWid
   }
 
   let settled = false
+  let followQueued = false
   function measure() {
     const doc = iframe.contentDocument
     if (!doc) return
@@ -197,6 +200,8 @@ export async function createViewer(host: HTMLElement, html: string, requestedWid
   if (doc) {
     lazy = Array.from(doc.querySelectorAll<HTMLImageElement>('img[data-pk-src], img[data-pk-srcset]'))
     doc.fonts?.ready.then(scheduleMeasure) // web fonts change line breaks and so heights
+    // a carousel or table inside the page scrolled: marks sitting on it have to follow
+    doc.addEventListener('scroll', () => viewer.follow(), { capture: true, passive: true })
   }
   measure()
 
@@ -231,6 +236,11 @@ export async function createViewer(host: HTMLElement, html: string, requestedWid
       else { applySize(); notify() }
     },
     remeasure: () => measure(),
+    follow() {
+      if (followQueued) return
+      followQueued = true
+      requestAnimationFrame(() => { followQueued = false; layoutListeners.forEach((cb) => cb()) })
+    },
     onLayout: (cb) => void layoutListeners.push(cb),
     setScale(next, focusClient) {
       const rect = container.getBoundingClientRect()
