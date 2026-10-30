@@ -76,3 +76,6 @@ export const actions = { undo() {}, redo() {}, recapture() {} }
 
 /** A newer version of the app has been installed in the background and is waiting for a reload. */
 export const updateReady = signal(false)
+
+/** The data format of the library on this device, shown in Settings; updates when background upgrades finish (0 until known). */
+export const libraryFormat = signal(0)

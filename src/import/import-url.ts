@@ -2,7 +2,7 @@
  * Importing from a web address: reuse a saved copy, fetch quickly, fall back to the rendered browser for blocked
  * or script-built pages, and re-capture a saved page while keeping its marks.
  */
-import { findPageByUrl, getPage, patchPage, putSnapshot, savePage } from '../store/repo.ts'
+import { findPageByUrl, getPage, patchPage, putPageText, putSnapshot, savePage } from '../store/repo.ts'
 import type { Page } from '../store/schema.ts'
 import { inspectHtml, sanitize, SANITIZER_VERSION } from './sanitize.ts'
 
@@ -62,7 +62,7 @@ export async function storePage(opts: {
   let origin = 'file:'
   try { if (opts.url) origin = new URL(opts.url).origin } catch { /* keep file: */ }
   const page: Page = {
-    id: crypto.randomUUID(), schemaVersion: 1, url: opts.url, siteOrigin: origin,
+    id: crypto.randomUUID(), schemaVersion: 2, url: opts.url, siteOrigin: origin,
     title: opts.title || info.title || (opts.url ? new URL(opts.url).hostname : 'Untitled'),
     captureMethod: opts.method, capturedAt: now, layoutWidth: opts.layoutWidth, docHeight: 0,
     textHash: await sha256(new DOMParser().parseFromString(html, 'text/html').body.textContent ?? ''),
@@ -70,6 +70,7 @@ export async function storePage(opts: {
   }
   await savePage(page)
   await putSnapshot({ pageId: page.id, html, sanitizerVersion: SANITIZER_VERSION })
+  await putPageText(page.id, page.title, html)
   return page
 }
 
@@ -125,6 +126,7 @@ export async function recapturePage(pageId: string, how: 'render' | 'fetch', key
   const r = await callApi(how === 'render' ? '/api/render' : '/api/fetch', page.url, key)
   const html = sanitize(r.html, r.finalUrl)
   await putSnapshot({ pageId, html, sanitizerVersion: SANITIZER_VERSION })
+  await putPageText(pageId, page.title, html)
   const next = { captureMethod: how === 'render' ? 'render' : 'fetch', capturedAt: new Date().toISOString(), docHeight: 0, textHash: await sha256(new DOMParser().parseFromString(html, 'text/html').body.textContent ?? '') } as const
   await patchPage(pageId, next)
   return { ...page, ...next }

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'preact/hooks'
 import { MAX_BACKUP_BYTES, parseBackup, restoreBackup, saveBackup } from '../store/backup.ts'
 import { getSetting } from '../store/repo.ts'
 import { setPref } from './appearance.ts'
-import { accent, ACCENTS, appKey, defaultWidth, density, drawWithFinger, go, sort, theme, view, WIDTHS, type Density, type Theme, type Width } from './state.ts'
+import { accent, ACCENTS, appKey, defaultWidth, density, drawWithFinger, go, libraryFormat, sort, theme, view, WIDTHS, type Density, type Theme, type Width } from './state.ts'
 import { SORTS, type Sort } from '../store/organize.ts'
 
 export async function loadSettings() {
@@ -58,6 +58,7 @@ function DataCard() {
       <p class="hint">Everything you import and mark lives on this device, not on a server. Keep a backup file in iCloud Drive or Files so it can never be lost, and to move your library to another device.</p>
       <div class="line"><span>Last backup</span><strong>{info.last ? ago(info.last) : 'never'}</strong></div>
       <div class="line"><span>Space used</span><span>{mb(info.used)}{info.quota ? ` of ${mb(info.quota)}` : ''}</span></div>
+      <div class="line"><span>Library format</span><span>{libraryFormat.value || '…'}</span></div>
       <div class="line"><span>Protected from automatic clean-up</span><span>{info.persisted ? 'Yes' : 'Not yet (add PageInk to your Home Screen)'}</span></div>
       <div class="row">
         <button class="btn primary" onClick={() => void backup()}>Back up everything</button>

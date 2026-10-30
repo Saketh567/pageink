@@ -4,7 +4,7 @@
  */
 import { sanitize, SANITIZER_VERSION } from '../import/sanitize.ts'
 import { getDb } from './db.ts'
-import { setSetting } from './repo.ts'
+import { putPageText, setSetting } from './repo.ts'
 import type { Annotation, Collection, Page, Snapshot } from './schema.ts'
 
 const BACKUP_FORMAT = 'pageink-backup'
@@ -110,7 +110,12 @@ export function parseBackup(text: string): Backup {
       tags: p.tags.filter(isStr).slice(0, 50).map((t) => t.slice(0, 100)),
     }
   })
-  for (const s of snapshots) if (!isObj(s) || !isStr(s.pageId) || !isStr(s.html) || s.html.length > MAX_SNAPSHOT_CHARS) throw notBackup()
+  for (const s of snapshots) {
+    if (!isObj(s) || !isStr(s.pageId) || !isStr(s.html) || s.html.length > MAX_SNAPSHOT_CHARS) throw notBackup()
+    // saved-page fields added in version 2: a list of 64-character hashes and a small status record
+    if (s.assets !== undefined && (!Array.isArray(s.assets) || s.assets.length > 20_000 || !s.assets.every((h) => isStr(h) && /^[0-9a-f]{64}$/.test(h)))) throw notBackup()
+    if (s.archive !== undefined && (!isObj(s.archive) || !['none', 'partial', 'complete'].includes(s.archive.state as string))) throw notBackup()
+  }
   for (const a of annotations) {
     if (!isObj(a) || !isStr(a.id) || !isStr(a.pageId) || !isStr(a.kind) || !KINDS.includes(a.kind) || !isStr(a.updatedAt) || !isObj(a.anchor)) throw notBackup()
     const at = (a.anchor as { page?: { x?: unknown; y?: unknown } }).page
@@ -156,5 +161,9 @@ export async function restoreBackup(b: Backup): Promise<RestoreSummary> {
     if (!(await tx.objectStore('collections').get(c.id))) { await tx.objectStore('collections').put(c); summary.collections++ }
   }
   await tx.done
+  for (const p of b.pages) {
+    const copy = clean.get(p.id)
+    if (copy !== undefined) await putPageText(p.id, p.title, copy) // keep search in step with what was restored
+  }
   return summary
 }

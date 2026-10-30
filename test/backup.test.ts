@@ -109,6 +109,21 @@ describe('parseBackup rejects bad files whole', () => {
     expect(() => parseBackup(JSON.stringify({ ...file({ pages: [page('p')] }), snapshots: [big] }))).toThrow('not a PageInk backup')
   })
 
+  test('accepts the saved-page fields of version 2 and old files without them', () => {
+    const snap = (extra: object) => JSON.stringify({ ...file({ pages: [page('p')] }), snapshots: [{ pageId: 'p', html: '<p>x</p>', sanitizerVersion: 3, ...extra }] })
+    expect(parseBackup(snap({})).snapshots).toHaveLength(1) // a version 1 file has neither field
+    expect(parseBackup(snap({ assets: ['a'.repeat(64)], archive: { state: 'complete', saved: 3, total: 3, bytes: 10, at: '2026-01-01T00:00:00.000Z' } })).snapshots).toHaveLength(1)
+  })
+
+  test.each([
+    ['assets that are not hashes', { assets: ['nope'] }],
+    ['assets that are not a list', { assets: 'a'.repeat(64) }],
+    ['an unknown archive state', { archive: { state: 'weird' } }],
+  ])('rejects a copy with %s', (_n, extra) => {
+    const text = JSON.stringify({ ...file({ pages: [page('p')] }), snapshots: [{ pageId: 'p', html: '<p>x</p>', sanitizerVersion: 3, ...extra }] })
+    expect(() => parseBackup(text)).toThrow('not a PageInk backup')
+  })
+
   test('a backup from a newer version says so', () => {
     expect(() => parseBackup(JSON.stringify({ ...file({}), version: 2 }))).toThrow('newer version')
   })

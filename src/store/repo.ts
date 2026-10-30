@@ -5,6 +5,10 @@
 import { getDb } from './db.ts'
 import type { Annotation, Collection, ID, Page, Snapshot } from './schema.ts'
 
+/** Pages are searched by their text, which is capped so one enormous page cannot fill the library. */
+const MAX_TEXT = 200_000
+const BLOCKS = 'p, div, li, ul, ol, h1, h2, h3, h4, h5, h6, br, tr, td, th, table, section, article, header, footer, nav, aside, blockquote, pre, dt, dd, figure, figcaption, summary, details'
+
 const SAMPLE_ID = 'sample'
 
 export async function savePage(p: Page) {
@@ -41,14 +45,28 @@ export async function listAnnotations(pageId: ID) {
 }
 export async function deletePage(id: ID) {
   const db = await getDb()
-  const tx = db.transaction(['pages', 'snapshots', 'annotations'], 'readwrite')
+  const tx = db.transaction(['pages', 'snapshots', 'annotations', 'texts'], 'readwrite')
   const keys = await tx.objectStore('annotations').index('pageId').getAllKeys(id)
   await Promise.all([
     tx.objectStore('pages').delete(id),
     tx.objectStore('snapshots').delete(id),
+    tx.objectStore('texts').delete(id),
     ...keys.map((k) => tx.objectStore('annotations').delete(k)),
     tx.done,
   ])
+}
+
+/** The readable text of a page's HTML: no styles or scripts, spaces collapsed, capped. */
+export function extractText(html: string): string {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  doc.querySelectorAll('script, style, noscript, template').forEach((n) => n.remove())
+  // textContent runs paragraphs together ("end" + "Start" = "endStart"), so put a space around every block
+  doc.querySelectorAll(BLOCKS).forEach((e) => { e.before(' '); e.after(' ') })
+  return (doc.body?.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, MAX_TEXT)
+}
+/** Keep a page's text (for search) next to the page; call whenever a page's HTML is stored or replaced. */
+export async function putPageText(pageId: ID, title: string, html: string) {
+  await (await getDb()).put('texts', { pageId, title, text: extractText(html) })
 }
 
 export async function getSetting<T>(key: string): Promise<T | undefined> {
@@ -64,10 +82,11 @@ export async function seedSample(fetchHtml: () => Promise<string>) {
   const html = await fetchHtml()
   const now = new Date().toISOString()
   await savePage({
-    id: SAMPLE_ID, schemaVersion: 1, url: '', siteOrigin: 'file:', title: 'How a web page works (sample)',
+    id: SAMPLE_ID, schemaVersion: 2, url: '', siteOrigin: 'file:', title: 'How a web page works (sample)',
     captureMethod: 'file', capturedAt: now, layoutWidth: 0, docHeight: 0, textHash: '', tags: [], createdAt: now, updatedAt: now,
   })
   await putSnapshot({ pageId: SAMPLE_ID, html, sanitizerVersion: 0 })
+  await putPageText(SAMPLE_ID, 'How a web page works (sample)', html)
 }
 
 export async function listCollections(): Promise<Collection[]> {

@@ -8,7 +8,8 @@ export interface Rect { x: number; y: number; w: number; h: number }
 
 export interface Page {
   id: ID
-  schemaVersion: 1
+  /** 1 = made by version 1; 2 = made by version 2 (pages can carry saved pictures and styles). */
+  schemaVersion: 1 | 2
   url: string
   siteOrigin: string
   title: string
@@ -37,7 +38,18 @@ export interface Page {
 
 export interface Collection { id: ID; name: string; color: string; order: number; createdAt: ISO }
 
-export interface Snapshot { pageId: ID; html: string; sanitizerVersion: number }
+export interface Snapshot {
+  pageId: ID
+  html: string
+  sanitizerVersion: number
+  /** Hashes of the saved pictures, styles and fonts this page uses (filled when pages are saved complete). */
+  assets?: string[]
+  /** How completely the page has been saved. */
+  archive?: { state: 'none' | 'partial' | 'complete'; saved: number; total: number; bytes: number; at: ISO }
+}
+
+/** The readable text of a page, kept apart from its HTML so searching never has to parse pages. */
+export interface PageText { pageId: ID; title: string; text: string }
 
 interface Anchor {
   page: { x: number; y: number }

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import 'fake-indexeddb/auto'
 import { expect, test } from 'vitest'
 import { deletePage, getSnapshot, listAnnotations, listPages, putAnnotation, putSnapshot, savePage, seedSample } from '../src/store/repo.ts'
