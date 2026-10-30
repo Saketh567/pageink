@@ -4,18 +4,18 @@ import { toggleAt } from './widgets.ts'
 export interface LinkTap { href: string; text: string }
 
 /**
- * Reading-mode taps inside the snapshot: dropdowns and FAQ headers open and close, links are followed. The iframe never gets pointer events, so a short,
+ * Taps inside the snapshot (any tap in Read mode, a finger tap in Mark mode): dropdowns and FAQ headers open and close, links are followed. The iframe never gets pointer events, so a short,
  * still tap on the container is hit-tested against the snapshot document instead.
  * Hash links scroll inside the page; everything else is reported to `onLink`.
  */
-export function attachLinkTaps(viewer: Viewer, isReading: () => boolean, onLink: (l: LinkTap) => void) {
+export function attachLinkTaps(viewer: Viewer, canTap: (e: PointerEvent) => boolean, onLink: (l: LinkTap) => void) {
   const c = viewer.container
   let down: { x: number; y: number; t: number } | null = null
   c.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY, t: e.timeStamp } })
   c.addEventListener('pointerup', (e) => {
     const d = down
     down = null
-    if (!d || !isReading() || (e.pointerType === 'mouse' && e.button !== 0)) return
+    if (!d || !canTap(e) || (e.pointerType === 'mouse' && e.button !== 0)) return
     if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 10 || e.timeStamp - d.t > 500) return
     const doc = viewer.iframe.contentDocument
     if (!doc) return

@@ -68,7 +68,7 @@ export function ToolTray() {
           aria-label={markup ? 'Markup mode, tap for reading mode' : 'Reading mode, tap for markup mode'}
           onClick={() => (mode.value = markup ? 'read' : 'markup')}
         >
-          <span class="lbl">{markup ? 'Mark' : 'Read'}</span>
+          <span class="lbl seg"><b class={markup ? 'on' : ''}>Mark</b><b class={markup ? '' : 'on'}>Read</b></span>
         </button>
       </div>
       {markup && (

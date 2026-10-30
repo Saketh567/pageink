@@ -107,3 +107,19 @@ test('marks stay on each page of a site while you move between its pages', async
   await expect(page.locator('.stage[data-ready]')).toBeAttached()
   await expect(page.locator('svg.viewer-ink g[data-layer=highlights] > g')).toHaveCount(1)
 })
+
+test.describe('a finger always browses, even in Mark mode', () => {
+  test.use({ hasTouch: true })
+
+  test('tapping a FAQ question and a link works without switching to Read mode', async ({ page, browserName }) => {
+    test.skip(browserName === 'webkit', 'Playwright WebKit touch taps send no pointer events (a real iPad does); covered by docs/IPAD-CHECKLIST.md')
+    await openFaq(page) // starts in Mark mode
+    await expect(page.getByRole('button', { name: /tap for reading mode/ })).toBeVisible()
+    const q = await frame(page).locator('#q').boundingBox()
+    await page.touchscreen.tap(q!.x + 20, q!.y + 10)
+    await expect(frame(page).getByText('Refunds arrive')).toBeVisible()
+    const link = await frame(page).getByRole('link', { name: 'External link' }).boundingBox()
+    await page.touchscreen.tap(link!.x + 10, link!.y + 8)
+    await expect(page.getByRole('dialog', { name: 'Link' })).toBeVisible()
+  })
+})

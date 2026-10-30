@@ -3,19 +3,21 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { createEditor } from '../ink/editor.ts'
 import { sanitize, SANITIZER_VERSION } from '../import/sanitize.ts'
 import { importUrl } from '../import/import-url.ts'
-import { getPage, getSnapshot, listAnnotations, patchPage, putSnapshot, savePage, setSetting } from '../store/repo.ts'
+import { getPage, getSnapshot, getSetting, listAnnotations, patchPage, putSnapshot, savePage, setSetting } from '../store/repo.ts'
 import { attachLinkTaps, type LinkTap } from '../viewer/links.ts'
 import { revealHidden } from '../viewer/widgets.ts'
 import { createViewer } from '../viewer/viewer.ts'
 import { HeatStrip } from './HeatStrip.tsx'
 import { MarksPanel } from './MarksPanel.tsx'
 import { NoteCard } from './NoteCard.tsx'
-import { activeViewer, appKey, canRedo, canUndo, currentPage, go, margin, mode, notice, panelOpen, trail } from './state.ts'
+import { activeViewer, appKey, canRedo, canUndo, currentPage, drawWithFinger, go, margin, mode, notice, panelOpen, trail } from './state.ts'
 import { ToolTray } from './ToolTray.tsx'
 
 export function Reader({ pageId }: { pageId: string }) {
   const host = useRef<HTMLDivElement>(null)
-  const [link, setLink] = useState<LinkTap | null>(null)
+  const [link, setLinkRaw] = useState<LinkTap | null>(null)
+  const linkAt = useRef(0)
+  const setLink = (l: LinkTap | null) => { linkAt.current = performance.now(); setLinkRaw(l) }
   const [width, setWidth] = useState(1280)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
@@ -49,9 +51,15 @@ export function Reader({ pageId }: { pageId: string }) {
       const sameSite = (href: string) => {
         try { return !!page.url && new URL(href).origin === new URL(page.url).origin } catch { return false }
       }
-      attachLinkTaps(viewer, () => mode.value === 'read', (l) => (sameSite(l.href) ? void followLink(l.href, page.id, page.layoutWidth) : setLink(l)))
+      // a finger always browses; the Pencil (or a mouse) marks unless Read mode is on
+      attachLinkTaps(viewer, (e) => mode.value === 'read' || (e.pointerType === 'touch' && !drawWithFinger.value), (l) => (sameSite(l.href) ? void followLink(l.href, page.id, page.layoutWidth) : setLink(l)))
       void patchPage(page.id, { openedAt: new Date().toISOString() })
       void setSetting('lastPage', page.id) // the library offers to continue here
+      void getSetting('hintSeen').then((seen) => {
+        if (seen || cancelled) return
+        notice.value = 'Finger: scroll and tap links  ·  Pencil: mark'
+        void setSetting('hintSeen', true)
+      })
       activeViewer.value = viewer
       currentPage.value = page
 
@@ -129,7 +137,7 @@ export function Reader({ pageId }: { pageId: string }) {
       {busy && <p class="toast" role="status">{busy}</p>}
       {error && <p class="toast error" role="alert" onClick={() => setError('')}>{error}</p>}
       {link && (
-        <div class="sheet-backdrop" onClick={() => setLink(null)}>
+        <div class="sheet-backdrop" onClick={() => performance.now() - linkAt.current > 400 && setLink(null)}>
           <div class="sheet" role="dialog" aria-label="Link" onClick={(e) => e.stopPropagation()}>
             <h2>Open link</h2>
             <p class="hint">{link.text || link.href}</p>
