@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { createEditor } from '../ink/editor.ts'
 import { importUrl } from '../import/import-url.ts'
-import { getPage, getSnapshot, listAnnotations, savePage } from '../store/repo.ts'
+import { getPage, getSnapshot, listAnnotations, patchPage, savePage } from '../store/repo.ts'
 import { attachLinkTaps, type LinkTap } from '../viewer/links.ts'
 import { createViewer } from '../viewer/viewer.ts'
 import { appKey, canRedo, canUndo, go, mode } from './state.ts'
@@ -29,6 +29,7 @@ export function Reader({ pageId }: { pageId: string }) {
       if (viewer.docHeight !== page.docHeight) await savePage({ ...page, docHeight: viewer.docHeight })
       const editor = createEditor(viewer, page.id, annotations)
       attachLinkTaps(viewer, () => mode.value === 'read', setLink)
+      void patchPage(page.id, { openedAt: new Date().toISOString() })
       host.current.dataset.ready = '1'
       stop = () => { editor.destroy(); viewer.destroy() }
     })()

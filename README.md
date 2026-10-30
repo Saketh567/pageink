@@ -2,7 +2,7 @@
 
 An iPad-first web app (PWA) for marking up real web pages with Apple Pencil. Import a page, then ink, highlight and annotate it directly, instead of screenshotting and drawing on the screenshot. Everything is stored on the device and works offline.
 
-**Version 1.0.0** includes: installable app, sample page viewer, pressure-sensitive pen, highlighter, eraser, undo/redo, toolbar, and local autosave. Page import, anchored highlights and notes, export and sharing are next; see [PLAN.md](PLAN.md).
+**Version 1.0.0** includes: installable app, pressure-sensitive pen, highlighter, eraser, undo/redo, local autosave, import from a web address or a saved file, and a library you can organise with collections, tags, pins, search and sorting, in four themes with your choice of accent colour. Anchored highlights and notes, export and sharing are next; see [PLAN.md](PLAN.md).
 
 ## Run it
 

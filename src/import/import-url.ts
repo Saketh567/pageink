@@ -53,7 +53,7 @@ export async function storePage(opts: {
   html: string; url: string; title: string; method: Page['captureMethod']; layoutWidth: number
 }): Promise<Page> {
   const html = sanitize(opts.html, opts.url || undefined)
-  const info = inspectHtml(html)
+  const info = inspectHtml(opts.html, opts.url || undefined) // raw HTML still has the meta tags
   const now = new Date().toISOString()
   let origin = 'file:'
   try { if (opts.url) origin = new URL(opts.url).origin } catch { /* keep file: */ }
@@ -62,7 +62,7 @@ export async function storePage(opts: {
     title: opts.title || info.title || (opts.url ? new URL(opts.url).hostname : 'Untitled'),
     captureMethod: opts.method, capturedAt: now, layoutWidth: opts.layoutWidth, docHeight: 0,
     textHash: await sha256(new DOMParser().parseFromString(html, 'text/html').body.textContent ?? ''),
-    tags: [], createdAt: now, updatedAt: now,
+    tags: [], cover: info.cover, description: info.description, openedAt: now, createdAt: now, updatedAt: now,
   }
   await savePage(page)
   await putSnapshot({ pageId: page.id, html, sanitizerVersion: SANITIZER_VERSION })

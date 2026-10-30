@@ -19,9 +19,17 @@ export interface Page {
   template?: 'ux-audit' | 'seo' | 'learning'
   checklist?: Record<string, boolean>
   boardId?: string
+  collectionId?: ID
+  pinned?: boolean
+  /** og:image of the original page, shown as the card cover */
+  cover?: string
+  description?: string
+  openedAt?: ISO
   createdAt: ISO
   updatedAt: ISO
 }
+
+export interface Collection { id: ID; name: string; color: string; order: number; createdAt: ISO }
 
 export interface Snapshot { pageId: ID; html: string; sanitizerVersion: number }
 

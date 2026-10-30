@@ -10,14 +10,23 @@ const FREEZE_CSS = 'html,body{overflow:hidden!important}'
 
 const parse = (html: string) => new DOMParser().parseFromString(html, 'text/html')
 
+const meta = (doc: Document, sel: string) => doc.querySelector<HTMLMetaElement>(sel)?.content.trim() ?? ''
+
 /** Does the fetched HTML look like an empty JS app shell? Counts text outside script/style/noscript/template. */
-export function inspectHtml(raw: string): { title: string; textLength: number; emptyRoot: boolean } {
+export function inspectHtml(raw: string, baseUrl?: string): {
+  title: string; textLength: number; emptyRoot: boolean; cover?: string; description?: string
+} {
   const doc = parse(raw)
+  let cover: string | undefined
+  const img = meta(doc, 'meta[property="og:image"], meta[name="twitter:image"]')
+  try { if (img) cover = new URL(img, baseUrl).href } catch { /* unresolvable cover is just skipped */ }
+  if (cover && !/^https?:/i.test(cover)) cover = undefined
+  const description = (meta(doc, 'meta[property="og:description"], meta[name="description"]') || undefined)?.slice(0, 300)
   const title = doc.title.trim() || doc.querySelector('h1')?.textContent?.trim() || ''
   const root = doc.querySelector('#root, #app, #__next, [data-reactroot]')
   const emptyRoot = !!root && !root.textContent?.trim() && !root.querySelector('img, svg, video, canvas')
   doc.querySelectorAll('script, style, noscript, template').forEach((n) => n.remove())
-  return { title, textLength: (doc.body?.textContent ?? '').replace(/\s+/g, ' ').trim().length, emptyRoot }
+  return { title, textLength: (doc.body?.textContent ?? '').replace(/\s+/g, ' ').trim().length, emptyRoot, cover, description }
 }
 
 /**

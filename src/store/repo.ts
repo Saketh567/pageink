@@ -1,10 +1,15 @@
 import { getDb } from './db.ts'
-import type { Annotation, ID, Page, Snapshot } from './schema.ts'
+import type { Annotation, Collection, ID, Page, Snapshot } from './schema.ts'
 
 export const SAMPLE_ID = 'sample'
 
 export async function savePage(p: Page) {
   await (await getDb()).put('pages', p)
+}
+/** Merge fields into a page. Does not touch updatedAt unless the patch carries it. */
+export async function patchPage(id: ID, patch: Partial<Page>) {
+  const p = await getPage(id)
+  if (p) await savePage({ ...p, ...patch })
 }
 export async function getPage(id: ID) {
   return (await getDb()).get('pages', id)
@@ -59,4 +64,21 @@ export async function seedSample(fetchHtml: () => Promise<string>) {
     captureMethod: 'file', capturedAt: now, layoutWidth: 1280, docHeight: 0, textHash: '', tags: [], createdAt: now, updatedAt: now,
   })
   await putSnapshot({ pageId: SAMPLE_ID, html, sanitizerVersion: 0 })
+}
+
+export async function listCollections(): Promise<Collection[]> {
+  return (await (await getDb()).getAll('collections')).sort((a, b) => a.order - b.order)
+}
+export async function putCollection(c: Collection) {
+  await (await getDb()).put('collections', c)
+}
+/** Removes the collection and un-files its pages; the pages themselves are kept. */
+export async function deleteCollection(id: ID) {
+  const db = await getDb()
+  const tx = db.transaction(['collections', 'pages'], 'readwrite')
+  await tx.objectStore('collections').delete(id)
+  for (const p of await tx.objectStore('pages').getAll()) {
+    if (p.collectionId === id) await tx.objectStore('pages').put({ ...p, collectionId: undefined })
+  }
+  await tx.done
 }

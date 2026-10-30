@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks'
 import { seedSample, setSetting } from '../store/repo.ts'
+import { loadAppearance, startAppearance } from './appearance.ts'
 import { Library } from './Library.tsx'
 import { Reader } from './Reader.tsx'
 import { loadSettings, Settings } from './Settings.tsx'
@@ -16,7 +17,8 @@ export function App() {
   useEffect(() => {
     void (async () => {
       await seedSample(() => fetch('/sample/sample-page.html').then((r) => r.text()))
-      await loadSettings()
+      await Promise.all([loadSettings(), loadAppearance()])
+      startAppearance()
       setReady(true)
       void requestPersistence()
     })()

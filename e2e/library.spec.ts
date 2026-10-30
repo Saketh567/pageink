@@ -21,43 +21,46 @@ async function mockApi(page: Page, handlers: { fetch?: string; render?: string; 
   })
 }
 
+const address = (page: Page) => page.getByLabel('Web address')
+const importBtn = (page: Page) => page.getByRole('button', { name: 'Import', exact: true })
+
 test('library shows the sample and opens it', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByText('How a web page works (sample)')).toBeVisible()
-  await page.getByRole('button', { name: /How a web page works/ }).first().click()
-  await expect(page.locator('iframe.viewer-frame')).toBeVisible()
+  await expect(page.getByText('How a web page works (sample)').first()).toBeVisible()
+  await page.getByRole('button', { name: /^Open How a web page works/ }).click()
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
   await page.getByRole('button', { name: 'Back to library' }).click()
-  await expect(page.getByPlaceholder('Paste a web address')).toBeVisible()
+  await expect(address(page)).toBeVisible()
 })
 
-test('import by URL uses fetch for a content page and groups by site', async ({ page }) => {
+test('import by URL uses fetch for a content page and shows it as a card', async ({ page }) => {
   const calls: string[] = []
   await mockApi(page, { calls })
   await setKey(page)
-  await page.getByPlaceholder('Paste a web address').fill('mock.example/article')
-  await page.getByRole('button', { name: 'Import', exact: true }).click()
-  await expect(page.locator('iframe.viewer-frame')).toBeVisible()
+  await address(page).fill('mock.example/article')
+  await importBtn(page).click()
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
   expect(calls).toEqual(['fetch'])
   await page.getByRole('button', { name: 'Back to library' }).click()
-  await expect(page.getByRole('heading', { name: 'mock.example' })).toBeVisible()
-  await expect(page.getByText('Mock Article').first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Open Mock Article/ })).toBeVisible()
+  await expect(page.locator('.pagecard .host', { hasText: 'mock.example' })).toBeVisible()
 })
 
 test('an empty app shell automatically falls back to render', async ({ page }) => {
   const calls: string[] = []
   await mockApi(page, { fetch: SHELL, render: ARTICLE, calls })
   await setKey(page)
-  await page.getByPlaceholder('Paste a web address').fill('https://mock.example/app')
-  await page.getByRole('button', { name: 'Import', exact: true }).click()
-  await expect(page.locator('iframe.viewer-frame')).toBeVisible()
+  await address(page).fill('https://mock.example/app')
+  await importBtn(page).click()
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
   expect(calls).toEqual(['fetch', 'render'])
 })
 
 test('a rejected key shows a friendly error', async ({ page }) => {
   await page.route('**/api/fetch', (r) => r.fulfill({ status: 401, json: { error: 'UNAUTHORIZED', message: 'Key rejected' } }))
   await setKey(page, 'wrong')
-  await page.getByPlaceholder('Paste a web address').fill('https://mock.example/')
-  await page.getByRole('button', { name: 'Import', exact: true }).click()
+  await address(page).fill('https://mock.example/')
+  await importBtn(page).click()
   await expect(page.getByRole('alert')).toContainText('Key rejected')
 })
 
@@ -65,21 +68,22 @@ test('importing a saved .html file works and never executes its script', async (
   await page.goto('/')
   const html = '<!doctype html><title>Saved</title><h1>Saved page</h1><script>window.__pwned = 1</script><img src=x onerror="window.__pwned = 2">'
   await page.locator('input[type=file]').setInputFiles({ name: 'saved.html', mimeType: 'text/html', buffer: Buffer.from(html) })
-  await expect(page.locator('iframe.viewer-frame')).toBeVisible()
+  await expect(page.locator('.stage[data-ready]')).toBeAttached()
   const frame = page.frameLocator('iframe.viewer-frame')
   await expect(frame.locator('h1')).toHaveText('Saved page')
   expect(await page.evaluate(() => (window as unknown as { __pwned?: number }).__pwned)).toBeUndefined()
   expect(await frame.locator('body').evaluate(() => (window as unknown as { __pwned?: number }).__pwned)).toBeUndefined()
 })
 
-test('rename and delete from the library menu', async ({ page }) => {
+test('rename and delete from the page options sheet', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: /Options for How a web page works/ }).click()
-  page.once('dialog', (d) => void d.accept('Renamed sample'))
-  await page.getByRole('button', { name: 'Rename' }).click()
-  await expect(page.getByText('Renamed sample')).toBeVisible()
+  await page.getByLabel('Title').fill('Renamed sample')
+  await page.getByLabel('Title').blur()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await expect(page.getByRole('button', { name: /^Open Renamed sample/ })).toBeVisible()
   await page.getByRole('button', { name: /Options for Renamed sample/ }).click()
   page.once('dialog', (d) => void d.accept())
   await page.getByRole('button', { name: 'Delete' }).click()
-  await expect(page.getByText('Renamed sample')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Open Renamed sample/ })).toHaveCount(0)
 })

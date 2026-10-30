@@ -36,3 +36,12 @@ One line each; full reasoning is in PLAN.md section 2.
 - Tests: e2e runs with service workers blocked so mocked `/api` routes are not bypassed.
 - First real import (an IDFC bank page) came out unstyled. Cause: the `base-uri 'self'` CSP header is inherited by the srcdoc snapshot, so its injected `<base href>` was ignored and every relative stylesheet/image URL resolved against the Vercel origin (served index.html, rejected as "not a stylesheet"). Fix: `base-uri 'self' http: https:` in `vercel.json`. Reproduced and verified in a headless browser under the production headers.
 - Known limit: fonts from sites that do not send CORS headers are refused by the browser, so those pages fall back to a system font. Scripts never run in a snapshot, so videos, carousels and menus that need JavaScript stay static.
+
+## Library, organisation and appearance (between Phase 2 and Phase 3)
+
+- IndexedDB is now version 2: adds a `collections` store. The upgrade is additive (`oldVersion < 2`), nothing is migrated or deleted. New optional `Page` fields: `collectionId`, `pinned`, `cover`, `description`, `openedAt`.
+- Organisation is deliberately simple: one collection per page (a folder, with a colour), free tags, a pin. Pinned pages always sort first. Search matches title, URL, site, tags and the page description; every word must match. "Recently opened" uses `openedAt`, set when a page is opened in the Reader.
+- Cover images are the page's own `og:image` / `twitter:image`, resolved against the final URL and loaded straight from that site with no referrer. If it fails, the card falls back to a gradient derived from the site name. The first image request does tell that site you imported its page; use a layout without covers if that matters (not built).
+- Drag and drop: cards are draggable onto a collection, Pinned or Unsorted in the sidebar. Verified in Chromium; Playwright WebKit cannot drive HTML5 drag and drop, so it is untested there and needs checking on the iPad.
+- Appearance: four themes (Auto follows the OS, Dark, Light, Paper), an accent colour with automatic text contrast, and comfortable/compact density. All are CSS variables on `<html>` (`data-theme`, `data-density`, `--accent`), so every screen follows them, including the toolbar and the reader backdrop. The imported page itself is never recoloured.
+- The library sidebar becomes a scrolling row of chips below 900 px so portrait iPad keeps the same filters.

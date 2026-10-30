@@ -20,6 +20,15 @@ Run on the Vercel preview URL (or production), in Safari first, then from the Ho
 - [ ] Toolbar can be dragged to the top, left, right and back; position is remembered.
 - [ ] "Draw with finger" (hand icon) lets a finger draw; Reading mode lets it scroll again.
 
+## Library and organisation
+- [ ] Landscape: sidebar with collections and tags; portrait: the same filters as a row of chips across the top.
+- [ ] New collection (colour and name); open a card's "..." and file it into the collection, add tags, pin it.
+- [ ] Filter by collection, Pinned, Unsorted and by tag; search finds titles, sites and tags; empty results say so.
+- [ ] Drag a card (touch and hold, then drag) onto a collection in the sidebar; check it works with the Pencil and a finger.
+- [ ] Sort order and Cards/List layout persist after closing the app.
+- [ ] Settings: Dark, Light, Paper and Auto themes; accent colours and the custom picker; Compact density. Check the toolbar and page backdrop follow the theme.
+- [ ] Imported pages show their cover image; one without a cover shows a coloured tile.
+
 ## Phase 2 (needs APP_KEY set in Vercel, and the same key entered in Settings)
 - [ ] Settings: enter the key; a wrong key shows "Key rejected" on import.
 - [ ] Import a Wikipedia article by URL: appears under en.wikipedia.org, opens, can be drawn on.
