@@ -78,3 +78,6 @@ User feedback: imported pages did not feel like the original site: tiny desktop 
 - **Backup and restore** (Settings, Your data): one `pageink-YYYY-MM-DD.pageink.json` with pages, page copies, marks and collections, handed to the share sheet (Save to Files, iCloud Drive, AirDrop) or downloaded. Restore **merges**: records that are missing or newer are added, nothing is deleted or replaced by older data. The file is untrusted input: it is validated whole (a bad file changes nothing) and every page copy is sanitized again. Known limit: pin and tag edits do not change a page's `updatedAt`, so they only come back onto a page that is missing. Settings are not part of the backup.
 - The library shows a back-up reminder once there is a page of your own and no backup in 7 days, and a "Continue where you left off" card for the last page opened.
 - Imported `.html` files are named after the page's own `<title>`, not the file name.
+
+## Dropdowns, FAQs and multi-page sites
+Saved copies cannot run site scripts, so PageInk opens and closes hidden content itself (src/viewer/widgets.ts): tap a header, or "Expand all sections". Same-site links import and open directly, with a Back chip; other sites ask first. Importing an address you already have reuses the saved copy.

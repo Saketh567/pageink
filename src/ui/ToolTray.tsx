@@ -1,5 +1,6 @@
 import { MEANINGS } from '../export/study-sheet.ts'
-import { actions, canRedo, canUndo, color, drawWithFinger, go, margin, marks, meaning, mode, panelOpen, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
+import { revealHidden } from '../viewer/widgets.ts'
+import { actions, activeViewer, canRedo, canUndo, color, drawWithFinger, go, margin, marks, meaning, mode, notice, panelOpen, PALETTE, size, tool, trayEdge, type Edge, type Tool } from './state.ts'
 
 // Line icons (Lucide, ISC licence), 24x24, stroke only.
 const ICONS = {
@@ -13,6 +14,7 @@ const ICONS = {
   text: ['M5 4h1a3 3 0 0 1 3 3 3 3 0 0 1 3-3h1', 'M13 20h-1a3 3 0 0 1-3-3 3 3 0 0 1-3 3H5', 'M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1', 'M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7', 'M9 7v10'],
   note: ['M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', 'M7 8h10', 'M7 12h6'],
   list: ['M8 6h13', 'M8 12h13', 'M8 18h13', 'M3 6h.01', 'M3 12h.01', 'M3 18h.01'],
+  expand: ['m7 15 5 5 5-5', 'm7 9 5-5 5 5'],
   lane: ['M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', 'M15 3v18'],
 }
 
@@ -27,6 +29,16 @@ function Icon({ name }: { name: keyof typeof ICONS }) {
 const TOOLS: Array<[Tool, keyof typeof ICONS, string]> = [
   ['mark', 'text', 'Mark text'], ['note', 'note', 'Note'], ['pen', 'pen', 'Pen'], ['highlighter', 'highlighter', 'Highlighter'], ['eraser', 'eraser', 'Eraser'],
 ]
+
+/** Opens every dropdown, FAQ and collapsed section on the page at once. */
+function expandAll() {
+  const v = activeViewer.value
+  const doc = v?.iframe.contentDocument
+  if (!v || !doc) return
+  const n = revealHidden(doc, { expandAll: true })
+  v.remeasure()
+  notice.value = n ? `Opened ${n} hidden section${n === 1 ? '' : 's'}` : 'Nothing hidden to open'
+}
 
 function dragTray(e: PointerEvent) {
   const handle = e.currentTarget as HTMLElement
@@ -104,6 +116,7 @@ export function ToolTray() {
         </>
       )}
       <div class="grp">
+        <button aria-label="Expand all sections" title="Open every dropdown and FAQ" onClick={expandAll}><Icon name="expand" /></button>
         <button class={margin.value ? 'on' : ''} aria-label="Margin lane" aria-pressed={margin.value} onClick={() => (margin.value = !margin.value)}><Icon name="lane" /></button>
         <button class={`withbadge ${panelOpen.value ? 'on' : ''}`} aria-label="Marks" aria-pressed={panelOpen.value} onClick={() => (panelOpen.value = !panelOpen.value)}>
           <Icon name="list" />

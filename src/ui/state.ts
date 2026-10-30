@@ -54,6 +54,10 @@ export const panelOpen = signal(false)
 export const margin = signal(false)
 export const activeViewer = signal<Viewer | null>(null)
 export const currentPage = signal<Page | null>(null)
+/** Pages you followed a link from, newest last, so a Back chip can return to them. */
+export const trail = signal<string[]>([])
+/** A short message shown briefly over the page. */
+export const notice = signal('')
 /** Bumped on scroll, zoom and layout so overlays (note cards, the heat strip) re-position themselves. */
 export const viewTick = signal(0)
 export const marksApi = {

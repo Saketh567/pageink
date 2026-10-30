@@ -23,6 +23,7 @@ Push to GitHub and import the repo in Vercel (framework: Vite, no settings neede
 ## Docs
 
 - [PLAN.md](PLAN.md): full build plan and roadmap
+- [docs/FEATURES.md](docs/FEATURES.md): core features, specifications, and the extra-features backlog
 - [docs/PHASE-3.md](docs/PHASE-3.md): Phase 3 spec (living marks: anchored highlights, notes, margin lane, spotlight, study sheet)
 - [docs/DECISIONS.md](docs/DECISIONS.md): key technical decisions
 - [docs/IPAD-CHECKLIST.md](docs/IPAD-CHECKLIST.md): what to test on the iPad

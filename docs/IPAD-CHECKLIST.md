@@ -65,3 +65,6 @@ Run on the Vercel preview URL (or production), in Safari first, then from the Ho
 - [ ] Reading mode: tap a #section link, it scrolls within the page.
 - [ ] Airplane Mode: previously imported pages still open and keep their ink (images may be missing until Phase 4 caching).
 - [ ] Rename and delete from the "..." menu; the layout choice (Desktop/Tablet/Phone) changes how the page is laid out.
+
+- [ ] Open a site with an FAQ: tap a question (Read mode) and it opens; Expand all opens the rest.
+- [ ] Tap a link to another page of the same site: it opens, and the Back chip returns.

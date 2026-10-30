@@ -1,9 +1,10 @@
 import type { Viewer } from './viewer.ts'
+import { toggleAt } from './widgets.ts'
 
 export interface LinkTap { href: string; text: string }
 
 /**
- * Reading-mode taps on links inside the snapshot. The iframe never gets pointer events, so a short,
+ * Reading-mode taps inside the snapshot: dropdowns and FAQ headers open and close, links are followed. The iframe never gets pointer events, so a short,
  * still tap on the container is hit-tested against the snapshot document instead.
  * Hash links scroll inside the page; everything else is reported to `onLink`.
  */
@@ -19,6 +20,7 @@ export function attachLinkTaps(viewer: Viewer, isReading: () => boolean, onLink:
     const doc = viewer.iframe.contentDocument
     if (!doc) return
     const p = viewer.clientToDoc(e.clientX, e.clientY)
+    if (toggleAt(doc, p.x, p.y)) { viewer.remeasure(); return } // a dropdown or FAQ header: open or close it
     const a = doc.elementFromPoint(p.x, p.y)?.closest('a[href]')
     if (!a) return
     const raw = a.getAttribute('href') ?? ''

@@ -9,7 +9,7 @@ import { setPref } from './appearance.ts'
 import { Icon, Logo } from './icons.tsx'
 import { PageCard } from './PageCard.tsx'
 import { CollectionSheet, PageSheet } from './Sheets.tsx'
-import { appKey, defaultWidth, go, sort, view, WIDTHS, type Width } from './state.ts'
+import { appKey, defaultWidth, go, sort, trail, view, WIDTHS, type Width } from './state.ts'
 
 type SheetState = { k: 'page'; id: string } | { k: 'coll'; id?: string } | null
 const BUILTIN: Record<string, string> = { all: 'All pages', pinned: 'Pinned', none: 'Unsorted' }
@@ -38,7 +38,7 @@ export function Library() {
     setResumeId((await getSetting<string>('lastPage')) ?? '')
     setLoaded(true)
   }
-  useEffect(() => { void refresh() }, [])
+  useEffect(() => { void refresh(); trail.value = [] }, [])
   // a deleted collection (or tag nobody uses any more) should not leave an empty filter behind
   useEffect(() => {
     if (loaded && !BUILTIN[coll] && !cols.some((c) => c.id === coll)) setColl('all')

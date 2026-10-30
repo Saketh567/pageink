@@ -5,11 +5,12 @@ import { sanitize, SANITIZER_VERSION } from '../import/sanitize.ts'
 import { importUrl } from '../import/import-url.ts'
 import { getPage, getSnapshot, listAnnotations, patchPage, putSnapshot, savePage, setSetting } from '../store/repo.ts'
 import { attachLinkTaps, type LinkTap } from '../viewer/links.ts'
+import { revealHidden } from '../viewer/widgets.ts'
 import { createViewer } from '../viewer/viewer.ts'
 import { HeatStrip } from './HeatStrip.tsx'
 import { MarksPanel } from './MarksPanel.tsx'
 import { NoteCard } from './NoteCard.tsx'
-import { activeViewer, appKey, canRedo, canUndo, currentPage, go, margin, mode, panelOpen } from './state.ts'
+import { activeViewer, appKey, canRedo, canUndo, currentPage, go, margin, mode, notice, panelOpen, trail } from './state.ts'
 import { ToolTray } from './ToolTray.tsx'
 
 export function Reader({ pageId }: { pageId: string }) {
@@ -19,6 +20,8 @@ export function Reader({ pageId }: { pageId: string }) {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [missing, setMissing] = useState(false)
+  const [prev, setPrev] = useState<{ id: string; title: string } | null>(null)
+  const trailTop = trail.value[trail.value.length - 1]
 
   useEffect(() => {
     let stop = () => {}
@@ -38,8 +41,15 @@ export function Reader({ pageId }: { pageId: string }) {
       const viewer = await createViewer(host.current, html, page.layoutWidth)
       if (cancelled) return viewer.destroy()
       if (viewer.docHeight !== page.docHeight) await savePage({ ...page, docHeight: viewer.docHeight })
+      // text that a site fades in with its own scripts would otherwise stay invisible in a saved copy
+      const idoc = viewer.iframe.contentDocument
+      if (idoc && revealHidden(idoc)) viewer.remeasure()
       const editor = createEditor(viewer, page.id, annotations)
-      attachLinkTaps(viewer, () => mode.value === 'read', setLink)
+      // a link to another page of the same site opens that page right away; other sites ask first
+      const sameSite = (href: string) => {
+        try { return !!page.url && new URL(href).origin === new URL(page.url).origin } catch { return false }
+      }
+      attachLinkTaps(viewer, () => mode.value === 'read', (l) => (sameSite(l.href) ? void followLink(l.href, page.id, page.layoutWidth) : setLink(l)))
       void patchPage(page.id, { openedAt: new Date().toISOString() })
       void setSetting('lastPage', page.id) // the library offers to continue here
       activeViewer.value = viewer
@@ -76,18 +86,31 @@ export function Reader({ pageId }: { pageId: string }) {
     return () => { cancelled = true; stop() }
   }, [pageId])
 
-  async function importLink(l: LinkTap) {
-    setLink(null)
+  /** Opens another page: the copy you already have, or a fresh import. A Back chip then leads back to where you came from. */
+  async function followLink(href: string, fromId: string, layout: number) {
     setError('')
     try {
-      const page = await importUrl(l.href, width, appKey.value, setBusy)
-      go(`/p/${page.id}`)
+      const next = await importUrl(href, layout, appKey.value, setBusy)
+      if (next.id !== fromId) trail.value = [...trail.value.filter((id) => id !== next.id), fromId]
+      go(`/p/${next.id}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Import failed.')
     } finally {
       setBusy('')
     }
   }
+  const importLink = (l: LinkTap) => { setLink(null); void followLink(l.href, pageId, width) }
+
+  useEffect(() => {
+    if (!trailTop || trailTop === pageId) { setPrev(null); return }
+    void getPage(trailTop).then((p) => setPrev(p ? { id: trailTop, title: p.title } : null))
+  }, [pageId, trailTop])
+
+  useEffect(() => {
+    if (!notice.value) return
+    const t = setTimeout(() => { notice.value = '' }, 2600)
+    return () => clearTimeout(t)
+  }, [notice.value])
 
   return (
     <div class={`app ${panelOpen.value ? 'has-panel' : ''}`}>
@@ -96,6 +119,12 @@ export function Reader({ pageId }: { pageId: string }) {
       <ToolTray />
       <MarksPanel />
       <NoteCard />
+      {prev && (
+        <button class="trailchip" aria-label={`Back to ${prev.title}`} onClick={() => { trail.value = trail.value.slice(0, -1); go(`/p/${prev.id}`) }}>
+          <span aria-hidden="true">‹</span><span class="t">{prev.title}</span>
+        </button>
+      )}
+      {notice.value && <p class="toast" role="status">{notice.value}</p>}
       {missing && <p class="toast">This page is no longer in your library.</p>}
       {busy && <p class="toast" role="status">{busy}</p>}
       {error && <p class="toast error" role="alert" onClick={() => setError('')}>{error}</p>}
@@ -105,7 +134,7 @@ export function Reader({ pageId }: { pageId: string }) {
             <h2>Open link</h2>
             <p class="hint">{link.text || link.href}</p>
             <p class="url">{link.href}</p>
-            <button class="btn primary" onClick={() => void importLink(link)}>Import this page</button>
+            <button class="btn primary" onClick={() => importLink(link)}>Import this page</button>
             <button class="btn" onClick={() => { window.open(link.href, '_blank', 'noopener'); setLink(null) }}>Open original in Safari</button>
             <button class="btn ghost" onClick={() => setLink(null)}>Cancel</button>
           </div>

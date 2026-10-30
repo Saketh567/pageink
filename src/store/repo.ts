@@ -102,3 +102,12 @@ export async function migrateToAutoLayout() {
   await tx.objectStore('settings').put({ key: 'autoLayoutV1', value: true })
   await tx.done
 }
+
+const normalizeUrl = (u: string) => {
+  try { const x = new URL(u); x.hash = ''; return x.href.replace(/\/$/, '') } catch { return u }
+}
+/** A page already in the library for this address (ignoring #fragments and a trailing slash). */
+export async function findPageByUrl(url: string): Promise<Page | undefined> {
+  const want = normalizeUrl(url)
+  return (await listPages()).find((p) => p.url && normalizeUrl(p.url) === want)
+}

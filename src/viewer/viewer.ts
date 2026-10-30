@@ -25,6 +25,8 @@ export interface Viewer {
   readonly lane: boolean
   readonly laneWidth: number
   setLane(on: boolean): void
+  /** Lay the page out again now (after something was opened or closed in it). */
+  remeasure(): void
   /** Called whenever the page is laid out again: a new width, late fonts or images can all move text. */
   onLayout(cb: () => void): void
   setScale(s: number, focusClient?: Pt): void
@@ -225,6 +227,7 @@ export async function createViewer(host: HTMLElement, html: string, requestedWid
       else if (fitMode) viewer.fit()
       else { applySize(); notify() }
     },
+    remeasure: () => measure(),
     onLayout: (cb) => void layoutListeners.push(cb),
     setScale(next, focusClient) {
       const rect = container.getBoundingClientRect()

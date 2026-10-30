@@ -271,3 +271,6 @@ svg .spotlight { animation: fade 0.18s ease; }
 .nudge > div { flex: 1 1 260px; }
 .nudge p { margin: 2px 0 0; }
 .card .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+.trailchip { position: fixed; z-index: 12; top: calc(10px + env(safe-area-inset-top)); left: 12px; max-width: min(62vw, 440px); display: flex; align-items: center; gap: 8px; padding: 9px 16px 9px 12px; border: 0; border-radius: 999px; background: var(--tray); color: var(--text); font-weight: 600; box-shadow: var(--shadow); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.trailchip .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

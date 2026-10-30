@@ -2,6 +2,7 @@
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { ImportError, importUrl } from '../src/import/import-url.ts'
+import { getDb } from '../src/store/db.ts'
 
 const PAGE = `<!doctype html><title>Ok</title><h1>Ok</h1>${'<p>enough real readable text to count as a content page. </p>'.repeat(10)}`
 const ok = (html = PAGE) => new Response(JSON.stringify({ html, finalUrl: 'https://site.example/x', status: 200 }), { status: 200 })
@@ -16,7 +17,11 @@ function stubApi(routes: { fetch: Response; render?: Response }) {
   return calls
 }
 
-afterEach(() => vi.unstubAllGlobals())
+// importing a page you already have returns it, so every test starts with an empty library
+afterEach(async () => {
+  vi.unstubAllGlobals()
+  await (await getDb()).clear('pages')
+})
 
 describe('importUrl fallback', () => {
   test('a normal page uses fetch only', async () => {

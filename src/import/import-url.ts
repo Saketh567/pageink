@@ -1,4 +1,4 @@
-import { getPage, putSnapshot, savePage } from '../store/repo.ts'
+import { findPageByUrl, getPage, putSnapshot, savePage } from '../store/repo.ts'
 import type { Page } from '../store/schema.ts'
 import { inspectHtml, sanitize, SANITIZER_VERSION } from './sanitize.ts'
 
@@ -75,6 +75,8 @@ export async function importUrl(
 ): Promise<Page> {
   let url = rawUrl.trim()
   if (!/^[a-z][a-z0-9+.-]*:/i.test(url)) url = 'https://' + url
+  const have = await findPageByUrl(url) // already in the library: open it, no need to fetch it again
+  if (have) return have
   onProgress('Fetching page…')
   let r: ApiOk
   let method: Page['captureMethod'] = 'fetch'
@@ -88,6 +90,8 @@ export async function importUrl(
     r = await callApi('/api/render', url, key)
     method = 'render'
   }
+  const again = await findPageByUrl(r.finalUrl) // the address may have redirected to a page you already have
+  if (again) return again
   const info = inspectHtml(r.html)
   if (method === 'fetch' && (info.textLength < 200 || info.emptyRoot)) {
     onProgress('Rendering JavaScript…')
